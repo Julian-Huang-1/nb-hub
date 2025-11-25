@@ -1,7 +1,4 @@
 {
   "name": "multi-framework-monorepo",
-  "private": true,
-  "devDependencies": {
-    "pnpm": "^8.0.0"
-  }
+  "private": true
 }
