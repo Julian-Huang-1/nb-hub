@@ -42,6 +42,10 @@ const sendMessage = () => {
     status.value = "idle";
   }, 1000);
 };
+
+// 终止发送
+
+//
 </script>
 
 <template>
