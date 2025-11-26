@@ -30,6 +30,7 @@ export interface MessagePluginnConfig {
 export interface MessagePlugin {
   name: string;
   version?: string;
+  abortRef?: AbortController;
   init?(config?: MessagePluginnConfig): Promise<void>;
   sendMessage(options: any, context: any): Promise<void>;
   destroy?(): Promise<void>;

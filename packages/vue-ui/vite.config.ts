@@ -1,13 +1,16 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
 
 // https://vite.dev/config/
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-import { playwright } from '@vitest/browser-playwright';
-const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { playwright } from "@vitest/browser-playwright";
+const dirname =
+  typeof __dirname !== "undefined"
+    ? __dirname
+    : path.dirname(fileURLToPath(import.meta.url));
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
@@ -18,12 +21,12 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          name: 'unit',
-          include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
-          exclude: ['src/**/*.stories.{js,ts,jsx,tsx}'],
-          environment: 'node',
+          name: "unit",
+          include: ["src/**/*.{test,spec}.{js,ts,jsx,tsx}"],
+          exclude: ["src/**/*.stories.{js,ts,jsx,tsx}"],
+          environment: "node",
           globals: true,
-        }
+        },
       },
       // Storybook tests project
       {
@@ -32,22 +35,24 @@ export default defineConfig({
           // The plugin will run tests for the stories defined in your Storybook config
           // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
           storybookTest({
-            configDir: path.join(dirname, '.storybook')
-          })
+            configDir: path.join(dirname, ".storybook"),
+          }),
         ],
         test: {
-          name: 'storybook',
+          name: "storybook",
           browser: {
             enabled: true,
             headless: true,
             provider: playwright({}),
-            instances: [{
-              browser: 'chromium'
-            }]
+            instances: [
+              {
+                browser: "chromium",
+              },
+            ],
           },
-          setupFiles: ['.storybook/vitest.setup.ts']
-        }
-      }
-    ]
-  }
+          setupFiles: [".storybook/vitest.setup.ts"],
+        },
+      },
+    ],
+  },
 });

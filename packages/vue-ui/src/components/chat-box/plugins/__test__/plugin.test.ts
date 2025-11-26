@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { messagePluginManner } from "../plugin";
+import { messageManager } from "../plugin";
 import type { MessagePlugin, MessagePluginnUiContext } from "../types";
 
-describe("messagePluginManner", () => {
-  let pluginManner: messagePluginManner;
+describe("messageManager", () => {
+  let pluginManner: messageManager;
   let mockUiContext: MessagePluginnUiContext;
 
   // 创建一个 mock 插件工厂函数
@@ -21,10 +21,10 @@ describe("messagePluginManner", () => {
 
   beforeEach(() => {
     // 清空静态插件数组
-    messagePluginManner.plugins = [];
+    messageManager.plugins = [];
 
     // 创建新的插件管理器实例
-    pluginManner = new messagePluginManner();
+    pluginManner = new messageManager();
 
     // 创建 mock UI 上下文
     mockUiContext = {
@@ -39,7 +39,7 @@ describe("messagePluginManner", () => {
 
   afterEach(() => {
     // 确保每次测试后清理
-    messagePluginManner.plugins = [];
+    messageManager.plugins = [];
   });
 
   describe("use", () => {
@@ -47,7 +47,7 @@ describe("messagePluginManner", () => {
       const plugin = createMockPlugin({ name: "MyPlugin" });
 
       await pluginManner.use(plugin);
-      expect(messagePluginManner.plugins).toHaveLength(1);
+      expect(messageManager.plugins).toHaveLength(1);
 
       // pluginManner.sendMessage 会去调 plugin.sendMessage
       await pluginManner.sendMessage(mockUiContext);
@@ -62,7 +62,7 @@ describe("messagePluginManner", () => {
       await pluginManner.use(plugin2);
 
       // 静态数组中应该有两个插件
-      expect(messagePluginManner.plugins).toHaveLength(2);
+      expect(messageManager.plugins).toHaveLength(2);
 
       // 但当前实例应该使用最新的插件 （单插件发送模式）
       await pluginManner.sendMessage(mockUiContext);
@@ -97,7 +97,7 @@ describe("messagePluginManner", () => {
 
     // 验证 console.error 被调用，并且参数正确
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      `[messagePluginManner] Error sending message to plugin ${plugin.name}:${error}`
+      `[messageManager] Error sending message to plugin ${plugin.name}:${error}`
     );
 
     // 恢复 console.error

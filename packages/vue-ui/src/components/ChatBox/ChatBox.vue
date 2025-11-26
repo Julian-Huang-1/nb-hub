@@ -38,7 +38,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: "输入消息...",
+  placeholder: "输入消息22...",
   maxHeight: "600px",
   autoScroll: true,
 });
