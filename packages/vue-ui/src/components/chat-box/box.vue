@@ -35,7 +35,12 @@ const sendMessage = async () => {
 
   const message: Message = {
     id: uuid(),
-    content: input.value,
+    content: [
+      {
+        type: "text",
+        text: input.value,
+      },
+    ],
     timestamp: Date.now(),
     role: "user",
   };
@@ -44,7 +49,7 @@ const sendMessage = async () => {
 
   const aiMessage: Message = {
     id: uuid(),
-    content: "",
+    content: [],
     timestamp: Date.now(),
     role: "assistant",
   };
@@ -52,9 +57,12 @@ const sendMessage = async () => {
   messages.value.push(message);
   messages.value.push(aiMessage);
 
-  const onStream = (chunk: string) => {
+  const onStream = (message: Message) => {
+    console.log({
+      onStream: message,
+    });
     if (messages.value) {
-      messages.value[messages.value.length - 1].content += chunk;
+      messages.value[messages.value.length - 1] = message;
     }
   };
 
@@ -63,7 +71,7 @@ const sendMessage = async () => {
     message,
     onStream
   );
-  messages.value[messages.value.length - 1] = res;
+  // messages.value[messages.value.length - 1] = res;
 };
 
 const createSession = () => {
@@ -137,7 +145,7 @@ const saveEditingContent = async (id: string, content: string) => {
     (session) => ({
       ...session,
       messages: session.messages.map((m) =>
-        m.id === id ? { ...m, content } : m
+        m.id === id ? { ...m, content: [{ type: "text", text: content }] } : m
       ),
     })
   );
@@ -156,24 +164,21 @@ const regenerateMessage = async (messageId: string, content: string) => {
 
   const aiMessage: Message = {
     id: uuid(),
-    content: "",
+    content: [],
     timestamp: Date.now(),
     role: "assistant",
   };
 
   messages.value.push(aiMessage);
-  const onStream = (chunk: string) => {
+  const onStream = (message: Message) => {
+    console.log({
+      onStream: message,
+    });
     if (messages.value) {
-      messages.value[messages.value.length - 1].content += chunk;
+      messages.value[messages.value.length - 1] = message;
     }
   };
   await chatbox.regenerateMessage(currentSessionId.value, messageId, onStream);
-  const session = await chatbox.getSession(currentSessionId.value);
-
-  if (session) {
-    sessions.value = await chatbox.listSessions();
-    messages.value = session.messages;
-  }
 };
 </script>
 

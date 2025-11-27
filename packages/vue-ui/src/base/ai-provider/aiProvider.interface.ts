@@ -1,13 +1,68 @@
+import type { APIMessage } from "../message-transformer/message-transformer.interface";
+
+// 定义各种内容类型
+export type ContentBlock =
+  | TextContent
+  | ThinkingContent
+  | ToolUseContent
+  | ImageContent;
+
+export interface TextContent {
+  type: "text";
+  text: string;
+}
+
+export interface ThinkingContent {
+  type: "thinking";
+  reasoning: string;
+}
+
+export interface ToolUseContent {
+  type: "tool_use";
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+export interface ImageContent {
+  type: "image";
+  images: Array<{
+    url?: string;
+    base64?: string;
+    media_type?: string;
+  }>;
+  text?: string; // 图片可能伴随文字说明
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "system";
-  content: string;
+  // 保留string 兼容旧逻辑
+  content: ContentBlock[];
   timestamp: number;
 }
 
+// AI 返回的原始数据结构
+export interface AIResponseChunk {
+  role?: "assistant";
+  reasoning?: string; // ThinkingContent 标识
+  images?: any[]; // ImageContent 标识
+  content?: string; // 文本内容
+  tool_calls?: Array<{
+    // ToolUseContent 标识
+    id: string;
+    type: "function";
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }>;
+  done?: boolean;
+}
+
 export interface StreamChunk {
-  content: string;
   done: boolean;
+  choices: any[];
 }
 
 export interface ChatOptions {
@@ -15,11 +70,10 @@ export interface ChatOptions {
   maxTokens?: number;
   signal?: AbortSignal;
 }
-
 export interface IAiProvider {
   // 流式聊天
   chatStream(
-    messages: Message[],
+    messages: APIMessage[],
     options?: ChatOptions
   ): AsyncIterableIterator<StreamChunk>;
 

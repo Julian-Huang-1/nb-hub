@@ -1,3 +1,4 @@
+import type { APIMessage } from "../message-transformer/message-transformer.interface";
 import type {
   ChatOptions,
   IAiProvider,
@@ -25,13 +26,15 @@ export class OpenRouteProvider implements IAiProvider {
   }
 
   async *chatStream(
-    messages: Message[],
+    messages: APIMessage[],
     options?: ChatOptions
-  ): AsyncIterableIterator<StreamChunk>{
+  ): AsyncIterableIterator<StreamChunk> {
     if (!this.openRouter) {
       this.init();
     }
-
+    console.log({
+      APIMessages: messages,
+    });
     const stream = await this.openRouter.chat.send(
       {
         model: this.model,

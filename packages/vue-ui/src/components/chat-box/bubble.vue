@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import type { Message } from "../../base/ai-provider/aiProvider.interface";
+import type {
+  ContentBlock,
+  Message,
+} from "../../base/ai-provider/aiProvider.interface";
 
 const props = defineProps<{
   message: Message;
@@ -34,7 +37,12 @@ const regenerateMessage = (id: string, content: string) => {
 const startEdit = () => {
   if (props.message.role === "user") {
     isEditing.value = true;
-    editingContent.value = props.message.content;
+    const textBlock = props.message.content.filter(
+      (block) => block.type === "text"
+    );
+    if (textBlock[0]) {
+      editingContent.value = textBlock[0].text;
+    }
   }
 };
 </script>
@@ -54,7 +62,13 @@ const startEdit = () => {
       </div>
     </div>
     <div v-else @dblclick="startEdit">
-      <div class="content">{{ props.message.content }}</div>
+      <div v-for="block in props.message.content as ContentBlock[]">
+        <div v-if="block.type === 'text'">{{ block.text }}</div>
+        <div v-if="block.type === 'thinking'">{{ block.reasoning }}</div>
+        <div v-if="block.type === 'tool_use'">{{ block.name }}</div>
+        <div v-if="block.type === 'image'">{{ block.images }}</div>
+      </div>
+
       <div class="time">{{ props.message.timestamp }}</div>
     </div>
   </div>

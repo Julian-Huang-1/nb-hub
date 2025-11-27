@@ -1,16 +1,21 @@
+import { ContentBlockAccumulator } from "./accumulator";
 import type { IAiProvider, Message } from "./ai-provider/aiProvider.interface";
+import { ContentBlockParser } from "./content-parser/content-block-parser";
+import { transformMessages } from "./message-transformer/transformer";
 import { SessionManager } from "./session-manager";
 import { v4 as uuid } from "uuid";
 
-export type MessageCallback = (chunk: string) => void;
+export type MessageCallback = (message: Message) => void;
 
 export class MessageManager {
   private sessionManager: SessionManager;
   private aiProvider: IAiProvider;
+  private contentParser: ContentBlockParser;
 
   constructor(sessionManager: SessionManager, aiProvider: IAiProvider) {
     this.sessionManager = sessionManager;
     this.aiProvider = aiProvider;
+    this.contentParser = new ContentBlockParser();
   }
 
   // 发送消息
@@ -19,14 +24,6 @@ export class MessageManager {
     message: Message,
     onStream?: MessageCallback
   ): Promise<Message> {
-    // 添加用户消息
-    // const userMessage: Message = {
-    //   id: uuid(),
-    //   role: 'user',
-    //   content,
-    //   timestamp: Date.now(),
-    // }
-
     const userMessage = message;
 
     await this.sessionManager.update(sessionId, (session) => ({
@@ -38,7 +35,7 @@ export class MessageManager {
     const aiMessage: Message = {
       id: uuid(),
       role: "assistant",
-      content: "",
+      content: [],
       timestamp: Date.now(),
     };
 
@@ -53,21 +50,37 @@ export class MessageManager {
 
     // 流式生成
     try {
-      for await (const chunk of this.aiProvider.chatStream(messages)) {
-        if (!chunk.done) {
-          const content = chunk.choices[0]?.delta?.content;
+      // 用于增量内容块（用于流式更新）
+      const blockAccumulators = new ContentBlockAccumulator();
 
-          aiMessage.content += content;
-          onStream?.(content);
+      for await (const chunk of this.aiProvider.chatStream(
+        transformMessages(messages)
+      )) {
+        if (!chunk.done) {
+          const contentBlocks = this.contentParser.parse(
+            chunk.choices[0].delta
+          );
+
+          if (contentBlocks) {
+            blockAccumulators.add(contentBlocks);
+          }
+          // 处理增量更新
+          aiMessage.content = blockAccumulators.getBlocks();
+          onStream?.({ ...aiMessage });
         }
       }
 
-      return aiMessage;
+      return { ...aiMessage };
     } catch (error) {
       // 错误处理
-      aiMessage.content = `Error: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`;
+      aiMessage.content = [
+        {
+          type: "text",
+          text: `Error: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        },
+      ];
 
       throw error;
     } finally {
@@ -103,17 +116,25 @@ export class MessageManager {
     const aiMessage: Message = {
       id: uuid(),
       role: "assistant",
-      content: "",
+      content: [],
       timestamp: Date.now(),
     };
 
-    // 流式生成
-    for await (const chunk of this.aiProvider.chatStream(messages)) {
-      if (!chunk.done) {
-        const content = chunk.choices[0]?.delta?.content;
+    // 用于增量内容块（用于流式更新）
+    const blockAccumulators = new ContentBlockAccumulator();
 
-        aiMessage.content += content;
-        onStream?.(content);
+    // 流式生成
+    for await (const chunk of this.aiProvider.chatStream(
+      transformMessages(messages)
+    )) {
+      if (!chunk.done) {
+        const contentBlocks = this.contentParser.parse(chunk.choices[0].delta);
+        if (contentBlocks) {
+          blockAccumulators.add(contentBlocks);
+        }
+        // 处理增量更新
+        aiMessage.content = blockAccumulators.getBlocks();
+        onStream?.({ ...aiMessage });
       }
     }
 
@@ -123,7 +144,7 @@ export class MessageManager {
       messages: [...messages, aiMessage],
     }));
 
-    return aiMessage;
+    return { ...aiMessage };
   }
 
   // 删除消息

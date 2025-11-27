@@ -8,7 +8,11 @@ export function getChatBox() {
   if (!chatboxInstance) {
     chatboxInstance = new ChatBox({
       storage: new IndexedDBStorage(),
-      aiProvider: new OpenRouteProvider(import.meta.env.VITE_OPENROUTER_KEY, "gpt-4o-mini"),
+      aiProvider: new OpenRouteProvider(
+        import.meta.env.VITE_OPENROUTER_KEY,
+        // "tngtech/deepseek-r1t2-chimera:free"
+        "openai/gpt-5-nano"
+      ),
     });
   }
   return chatboxInstance;

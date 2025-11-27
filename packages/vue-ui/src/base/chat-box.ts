@@ -1,6 +1,6 @@
 import type { IAiProvider, Message } from "./ai-provider/aiProvider.interface";
 import { ChatEvent, EventBus, type ChatEventType } from "./event-bus";
-import { MessageManager } from "./message-manager";
+import { MessageManager, type MessageCallback } from "./message-manager";
 import {
   SessionManager,
   type Session,
@@ -70,11 +70,11 @@ export class ChatBox {
   async sendMessage(
     sessionId: string,
     message: Message,
-    onStream?: (chunk: string) => void
+    onStream?: MessageCallback
   ): Promise<Message> {
-    const wrappedCallback = (chunk: string) => {
-      this.eventBus.emit(ChatEvent.MESSAGE_STREAMING, { sessionId, chunk });
-      onStream?.(chunk);
+    const wrappedCallback = (message: Message) => {
+      this.eventBus.emit(ChatEvent.MESSAGE_STREAMING, { sessionId, message });
+      onStream?.(message);
     };
 
     try {
@@ -100,11 +100,11 @@ export class ChatBox {
   async regenerateMessage(
     sessionId: string,
     messageId: string,
-    onStream?: (chunk: string) => void
+    onStream?: MessageCallback
   ): Promise<Message> {
-    const wrappedCallback = (chunk: string) => {
-      this.eventBus.emit(ChatEvent.MESSAGE_STREAMING, { sessionId, chunk });
-      onStream?.(chunk);
+    const wrappedCallback = (message: Parameters<MessageCallback>[0]) => {
+      this.eventBus.emit(ChatEvent.MESSAGE_STREAMING, { sessionId, message });
+      onStream?.(message);
     };
 
     return this.messageManager.regenerate(
