@@ -92,13 +92,5 @@ export interface ITransformStrategy {
   /**
    * 转换为纯文本（简单模式）
    */
-  toPlainText(block: ContentBlock, context: TransformContext): string;
-
-  /**
-   * 转换为结构化内容（高级模式）
-   */
-  toStructuredContent(
-    block: ContentBlock,
-    context: TransformContext
-  ): TransformResult;
+  toPlainText(block: ContentBlock): string;
 }

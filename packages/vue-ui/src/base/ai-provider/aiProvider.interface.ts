@@ -73,7 +73,7 @@ export interface ChatOptions {
 export interface IAiProvider {
   // 流式聊天
   chatStream(
-    messages: APIMessage[],
+    messages: Message[],
     options?: ChatOptions
   ): AsyncIterableIterator<StreamChunk>;
 

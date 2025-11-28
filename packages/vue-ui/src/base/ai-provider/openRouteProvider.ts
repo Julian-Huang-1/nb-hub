@@ -1,4 +1,4 @@
-import type { APIMessage } from "../message-transformer/message-transformer.interface";
+import { MessageTransformer } from "../message-transformer/transformer";
 import type {
   ChatOptions,
   IAiProvider,
@@ -11,6 +11,7 @@ export class OpenRouteProvider implements IAiProvider {
   private apiKey: string = "";
   private model: string = "";
   private openRouter: any = null;
+  private messageTransformer: MessageTransformer = new MessageTransformer();
 
   constructor(apiKey: string, model: string) {
     this.apiKey = apiKey;
@@ -26,19 +27,20 @@ export class OpenRouteProvider implements IAiProvider {
   }
 
   async *chatStream(
-    messages: APIMessage[],
+    messages: Message[],
     options?: ChatOptions
   ): AsyncIterableIterator<StreamChunk> {
     if (!this.openRouter) {
       this.init();
     }
+    const APIMessages = this.messageTransformer.transform(messages);
     console.log({
-      APIMessages: messages,
+      APIMessages,
     });
     const stream = await this.openRouter.chat.send(
       {
         model: this.model,
-        messages,
+        messages: APIMessages,
         temperature: options?.temperature,
         max_tokens: options?.maxTokens,
         stream: true,

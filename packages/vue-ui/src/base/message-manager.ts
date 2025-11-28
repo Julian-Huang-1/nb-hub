@@ -1,7 +1,6 @@
 import { ContentBlockAccumulator } from "./accumulator";
 import type { IAiProvider, Message } from "./ai-provider/aiProvider.interface";
 import { ContentBlockParser } from "./content-parser/content-block-parser";
-import { transformMessages } from "./message-transformer/transformer";
 import { SessionManager } from "./session-manager";
 import { v4 as uuid } from "uuid";
 
@@ -53,9 +52,7 @@ export class MessageManager {
       // 用于增量内容块（用于流式更新）
       const blockAccumulators = new ContentBlockAccumulator();
 
-      for await (const chunk of this.aiProvider.chatStream(
-        transformMessages(messages)
-      )) {
+      for await (const chunk of this.aiProvider.chatStream(messages)) {
         if (!chunk.done) {
           const contentBlocks = this.contentParser.parse(
             chunk.choices[0].delta
@@ -124,9 +121,7 @@ export class MessageManager {
     const blockAccumulators = new ContentBlockAccumulator();
 
     // 流式生成
-    for await (const chunk of this.aiProvider.chatStream(
-      transformMessages(messages)
-    )) {
+    for await (const chunk of this.aiProvider.chatStream(messages)) {
       if (!chunk.done) {
         const contentBlocks = this.contentParser.parse(chunk.choices[0].delta);
         if (contentBlocks) {
