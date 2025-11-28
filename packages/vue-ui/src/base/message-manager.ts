@@ -59,7 +59,9 @@ export class MessageManager {
           );
 
           if (contentBlocks) {
-            blockAccumulators.add(contentBlocks);
+            for (const block of contentBlocks) {
+              blockAccumulators.add(block);
+            }
           }
           // 处理增量更新
           aiMessage.content = blockAccumulators.getBlocks();
@@ -124,8 +126,11 @@ export class MessageManager {
     for await (const chunk of this.aiProvider.chatStream(messages)) {
       if (!chunk.done) {
         const contentBlocks = this.contentParser.parse(chunk.choices[0].delta);
+
         if (contentBlocks) {
-          blockAccumulators.add(contentBlocks);
+          for (const block of contentBlocks) {
+            blockAccumulators.add(block);
+          }
         }
         // 处理增量更新
         aiMessage.content = blockAccumulators.getBlocks();

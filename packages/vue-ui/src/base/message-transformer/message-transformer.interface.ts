@@ -6,7 +6,7 @@ import type { ContentBlock } from "../ai-provider/aiProvider.interface";
  * OpenAI API 内容格式
  * @see https://platform.openai.com/docs/api-reference/chat/create
  */
-export type APIContentPart = APITextContent | APIImageContent;
+export type APIContentPart = APITextContent | APIImageContent | APIFileContent;
 
 /**
  * 文本内容部分
@@ -21,11 +21,21 @@ export interface APITextContent {
  */
 export interface APIImageContent {
   type: "image_url";
-  image_url: {
+  imageUrl: {
     url: string;
   };
 }
 
+/**
+ * 文件内容部分
+ */
+export interface APIFileContent {
+  type: "file";
+  file: {
+    filename: string;
+    file_data: string;
+  };
+}
 /**
  * OpenAI 消息格式
  */
@@ -33,7 +43,7 @@ export interface APIMessage {
   role: "system" | "user" | "assistant" | "tool";
 
   // content 可以是字符串或内容部分数组
-  content: string | null | APIContentPart[];
+  content: null | APIContentPart[];
 
   // 可选：助手的名称
   name?: string;
@@ -58,29 +68,6 @@ export interface APIToolCall {
 }
 
 /**
- * 转换上下文
- */
-export interface TransformContext {
-  includeThinking: boolean;
-  thinkingPrefix: string;
-  preserveStructure: boolean;
-  // 新增：图片详细级别
-  imageDetail?: "auto" | "low" | "high";
-}
-
-/**
- * 转换结果
- */
-export interface TransformResult {
-  // 文本内容（简单模式）
-  text?: string;
-  // 结构化内容（高级模式）
-  contentParts?: APIContentPart[];
-  // 工具调用
-  toolCalls?: APIToolCall[];
-}
-
-/**
  * 内容块转换策略接口
  */
 export interface ITransformStrategy {
@@ -92,5 +79,5 @@ export interface ITransformStrategy {
   /**
    * 转换为纯文本（简单模式）
    */
-  toPlainText(block: ContentBlock): string;
+  transform(block: ContentBlock): APIContentPart;
 }

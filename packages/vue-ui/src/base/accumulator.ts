@@ -27,7 +27,7 @@ export class ContentBlockAccumulator {
       case "tool_use":
         this.addToolUseBlock(block);
         break;
-      case "image":
+      case "image_url":
         this.addImageBlock(block);
         break;
     }

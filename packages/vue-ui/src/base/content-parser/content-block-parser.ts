@@ -25,12 +25,12 @@ export class ContentBlockParser {
   }
 
   // 解析 AI 响应块为内容块数组
-  parse(chunk: AIResponseChunk): ContentBlock | undefined {
+  parse(chunk: AIResponseChunk): ContentBlock[] | undefined {
     for (const parser of this.parsers) {
       if (parser.canParse(chunk)) {
         const blocks = parser.parse(chunk);
-        if (blocks.length > 0 && blocks[0]) {
-          return blocks[0];
+        if (blocks.length > 0) {
+          return blocks;
         }
       }
     }

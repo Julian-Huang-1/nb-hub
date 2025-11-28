@@ -5,14 +5,16 @@ import type { SessionMeta } from "../../base/session-manager";
 import { getChatBox } from "./chatbox.service";
 import type { Status } from "./plugins/types";
 import SessionList from "./session-list.vue";
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, toRaw } from "vue";
 import { v4 as uuid } from "uuid";
 import Bubble from "./bubble.vue";
+import FileUploader, { type UploadFile } from "./file-uploader.vue";
 // 状态管理
 const messages = ref<Message[]>([]);
 const sessions = ref<SessionMeta[]>([]);
 const currentSessionId = ref<string>("");
 const input = ref<string>("");
+const files = ref<UploadFile[] | null>(null);
 const status = ref<Status>("idle");
 
 const chatbox = getChatBox();
@@ -45,7 +47,12 @@ const sendMessage = async () => {
     role: "user",
   };
 
+  if (files.value) {
+    message.content.push(...toRaw(files.value));
+  }
+
   input.value = "";
+  files.value = null;
 
   const aiMessage: Message = {
     id: uuid(),
@@ -79,12 +86,7 @@ const createSession = () => {
 };
 
 // 终止发送
-const abort = () => {
-  if (isLoading.value) {
-    messageManagerInstance.abort();
-  }
-  setStatus("idle");
-};
+const abort = () => {};
 
 const deleteSession = async (id: string) => {
   await chatbox.deleteSession(id);
@@ -180,6 +182,11 @@ const regenerateMessage = async (messageId: string, content: string) => {
   };
   await chatbox.regenerateMessage(currentSessionId.value, messageId, onStream);
 };
+
+const handleFileChange = (_files: UploadFile[]) => {
+  files.value = _files;
+  console.log(_files);
+};
 </script>
 
 <template>
@@ -211,6 +218,20 @@ const regenerateMessage = async (messageId: string, content: string) => {
       </div>
       <div class="chat-box-input-area">
         <input type="text" v-model="input" />
+        <div>
+          <FileUploader
+            @change="handleFileChange"
+            v-slot="{ openFilePicker, files, removeFile }"
+          >
+            <button @click="openFilePicker">上传文件</button>
+            <ul>
+              <li v-for="file in files" :key="file.id">
+                {{ file.name }}
+                <button @click="removeFile(file.id)">×</button>
+              </li>
+            </ul>
+          </FileUploader>
+        </div>
         <button @click="sendMessage" :disabled="!canSend">发送</button>
       </div>
     </div>

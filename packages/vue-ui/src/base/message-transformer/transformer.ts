@@ -8,9 +8,8 @@ import type {
 } from "./message-transformer.interface";
 import {
   TextTransformStrategy,
-  ThinkingTransformStrategy,
-  ToolUseTransformStrategy,
   ImageTransformStrategy,
+  FileTransformStrategy,
 } from "./transformer-strategies";
 
 /**
@@ -40,8 +39,9 @@ export class MessageTransformer {
    */
   private registerDefaultStrategies(): void {
     this.registerStrategy(new TextTransformStrategy());
-    this.registerStrategy(new ThinkingTransformStrategy());
-    this.registerStrategy(new ToolUseTransformStrategy());
+    // this.registerStrategy(new ThinkingTransformStrategy());
+    // this.registerStrategy(new ToolUseTransformStrategy());
+    this.registerStrategy(new FileTransformStrategy());
     this.registerStrategy(new ImageTransformStrategy());
   }
 
@@ -65,38 +65,22 @@ export class MessageTransformer {
   private transformSingleMessage(message: Message): APIMessage {
     const apiMessage: APIMessage = {
       role: message.role,
-      content: null,
+      content: [],
     };
 
-    // 简单模式：转换为纯文本字符串
-    apiMessage.content = this.transformToPlainText(message.content);
-
-    return apiMessage;
-  }
-
-  /**
-   * 转换为纯文本格式
-   */
-  private transformToPlainText(blocks: ContentBlock[]): string {
-    const textParts: string[] = [];
-
-    for (const block of blocks) {
+    for (const block of message.content) {
       const strategy = this.strategies.get(block.type);
-
       if (!strategy) {
         console.warn(
           `No transform strategy found for block type: ${block.type}`
         );
         continue;
       }
-
-      const text = strategy.toPlainText(block);
-      if (text) {
-        textParts.push(text);
-      }
+      const contentPart = strategy.transform(block);
+      apiMessage.content!.push(contentPart);
     }
 
-    return textParts.join("\n");
+    return apiMessage;
   }
 }
 

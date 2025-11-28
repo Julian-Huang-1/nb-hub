@@ -40,13 +40,16 @@ export class ImageParser implements IContentBlockParser {
   parse(chunk: AIResponseChunk): ContentBlock[] {
     const blocks: ContentBlock[] = [];
 
+    if (chunk.content) {
+      blocks.push({
+        type: "text",
+        text: chunk.content,
+      });
+    }
+
     // 添加图片块
     if (chunk.images && chunk.images.length > 0) {
-      blocks.push({
-        type: "image",
-        images: chunk.images,
-        text: chunk.content, // 图片可能附带文字说明
-      });
+      blocks.push(...chunk.images);
     }
 
     return blocks;

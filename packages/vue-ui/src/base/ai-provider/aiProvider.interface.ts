@@ -1,11 +1,10 @@
-import type { APIMessage } from "../message-transformer/message-transformer.interface";
-
 // 定义各种内容类型
 export type ContentBlock =
   | TextContent
   | ThinkingContent
   | ToolUseContent
-  | ImageContent;
+  | ImageContent
+  | FileContent;
 
 export interface TextContent {
   type: "text";
@@ -25,13 +24,18 @@ export interface ToolUseContent {
 }
 
 export interface ImageContent {
-  type: "image";
-  images: Array<{
-    url?: string;
-    base64?: string;
-    media_type?: string;
-  }>;
-  text?: string; // 图片可能伴随文字说明
+  type: "image_url";
+  imageUrl: {
+    url: string;
+  };
+}
+
+export interface FileContent {
+  type: "file";
+  file: {
+    filename: string;
+    file_data: string;
+  };
 }
 
 export interface Message {

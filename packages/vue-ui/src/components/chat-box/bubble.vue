@@ -66,7 +66,9 @@ const startEdit = () => {
         <div v-if="block.type === 'text'">{{ block.text }}</div>
         <div v-if="block.type === 'thinking'">{{ block.reasoning }}</div>
         <div v-if="block.type === 'tool_use'">{{ block.name }}</div>
-        <div v-if="block.type === 'image'">{{ block.images }}</div>
+        <div v-if="block.type === 'image_url'">
+          <img :src="block.image_url.url" alt="" width="100" height="100" />
+        </div>
       </div>
 
       <div class="time">{{ props.message.timestamp }}</div>
