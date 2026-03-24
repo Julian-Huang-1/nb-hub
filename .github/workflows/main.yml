@@ -25,14 +25,7 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      # 4. 设置 SSH key (仅用于远程部署)
-      - name: Setup SSH
-        if: env.ECS_HOST != ''
-        uses: webfactory/ssh-agent@v0.8.1
-        with:
-          ssh-private-key: ${{ secrets.ECS_SSH_KEY }}
-
-      # 5. 运行你的部署脚本
+      # 4. 运行你的部署脚本
       - name: Run deploy script
         env:
           ECS_HOST: ${{ secrets.ECS_HOST }}
