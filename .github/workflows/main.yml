@@ -1,21 +1,41 @@
-name: Deploy Workflow
+name: Build and Deploy
 
 on:
   push:
     branches:
-      - main  # 当 main 分支有推送时触发
+      - main
 
 jobs:
-  deploy:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # 1. 检出代码
+      - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. 安装 Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "24.14.0" # 可根据需要修改 Node 版本
+          cache: "pnpm"
+
+      # 3. 安装 pnpm
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      # 4. 设置 SSH key (仅用于远程部署)
+      - name: Setup SSH
+        if: env.ECS_HOST != ''
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.ECS_SSH_KEY }}
+
+      # 5. 运行你的部署脚本
       - name: Run deploy script
-        run: ./deploy.sh
         env:
           ECS_HOST: ${{ secrets.ECS_HOST }}
           ECS_USER: ${{ secrets.ECS_USER }}
           ECS_SSH_KEY: ${{ secrets.ECS_SSH_KEY }}
+        run: bash ./deploy.sh
