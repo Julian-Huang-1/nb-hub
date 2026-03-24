@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 FRONTEND_BASE="apps"
 BACKEND_BASE="backends"
@@ -73,6 +73,11 @@ for app in "${FRONTENDS[@]}"; do
   echo "🚀 Building frontend: $app_name"
   pnpm --filter "$app_name" install
   pnpm --filter "$app_name" build
+
+  if [ ! -d "$app/dist" ]; then
+    echo "❌ Frontend build output not found: $app/dist"
+    exit 1
+  fi
 done
 
 # -----------------------------
@@ -83,6 +88,11 @@ for service in "${BACKENDS[@]}"; do
   echo "🚀 Building backend: $service_name"
   pnpm --filter "$service_name" install
   pnpm --filter "$service_name" build
+
+  if [ ! -d "$service" ]; then
+    echo "❌ Backend directory not found: $service"
+    exit 1
+  fi
 done
 
 if [ "$ENVIRONMENT" = "local" ]; then
@@ -94,29 +104,48 @@ fi
 # 将私钥内容写入临时文件
 # -----------------------------
 SSH_KEY_FILE=$(mktemp)
-printf "%s" "$ECS_SSH_KEY" > "$SSH_KEY_FILE"
+printf "%s" "$ECS_SSH_KEY" | tr -d '\r' > "$SSH_KEY_FILE"
 chmod 600 "$SSH_KEY_FILE"
 
-SSH_CMD="ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no"
-RSYNC_RSH="ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no"
+SSH_OPTS="-i $SSH_KEY_FILE -o StrictHostKeyChecking=no"
+SSH_CMD="ssh $SSH_OPTS"
+RSYNC_RSH="ssh $SSH_OPTS"
 
 # -----------------------------
 # 部署前端
+# 远程不存在则创建，存在则同步替换
 # -----------------------------
 for app in "${FRONTENDS[@]}"; do
+  app_name=$(basename "$app")
+  local_dist_dir="$app/dist"
+  remote_dir="$DEPLOY_BASE/$app/dist"
+
   echo "=== Deploying frontend: $app ==="
-  rsync -avz -e "$RSYNC_RSH" \
-    "$app/out/" "$ECS_USER@$ECS_HOST:$DEPLOY_BASE/$app/out/"
+  echo "Local dist: $local_dist_dir"
+  echo "Remote dir: $remote_dir"
+
+  $SSH_CMD "$ECS_USER@$ECS_HOST" "mkdir -p '$remote_dir'"
+
+  rsync -avz --delete -e "$RSYNC_RSH" \
+    "$local_dist_dir/" "$ECS_USER@$ECS_HOST:$remote_dir/"
 done
 
 # -----------------------------
 # 部署后端
+# 远程不存在则创建，存在则同步替换
 # -----------------------------
 for service in "${BACKENDS[@]}"; do
   service_name=$(basename "$service")
+  remote_dir="$DEPLOY_BASE/$service"
+
   echo "=== Deploying backend: $service ==="
-  rsync -avz -e "$RSYNC_RSH" \
-    "$service/" "$ECS_USER@$ECS_HOST:$DEPLOY_BASE/$service/"
+  echo "Remote dir: $remote_dir"
+
+  $SSH_CMD "$ECS_USER@$ECS_HOST" "mkdir -p '$remote_dir'"
+
+  rsync -avz --delete -e "$RSYNC_RSH" \
+    "$service/" "$ECS_USER@$ECS_HOST:$remote_dir/"
+
   $SSH_CMD "$ECS_USER@$ECS_HOST" "$PM2_CMD restart $service_name"
 done
 
