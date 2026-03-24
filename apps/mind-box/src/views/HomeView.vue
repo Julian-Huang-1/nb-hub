@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import { site } from '../site'
-import { posts } from '../data/posts'
-import { formatDate } from '../utils/format'
+import { computed } from "vue";
+import { RouterLink, useRoute } from "vue-router";
+import { site } from "../site";
+import { posts } from "../data/posts";
+import { formatDate } from "../utils/format";
 
-const route = useRoute()
+const route = useRoute();
 
 /** #about → 仅关于；其余（含无 hash、#posts）→ 仅文章列表 */
-const showAbout = computed(() => route.hash === '#about')
-const showPosts = computed(() => route.hash !== '#about')
+const showAbout = computed(() => route.hash === "#about");
+const showPosts = computed(() => route.hash !== "#about");
 </script>
 
 <template>
@@ -27,7 +27,7 @@ const showPosts = computed(() => route.hash !== '#about')
         我把这里当作一间朝北的小书房：窗台上不一定有名贵花草，但总有没读完的书、没写完的句子，和偶尔从生活里捡回来的光。路上遇见的云、旧诗里的一句、深夜突然想明白的事，都会慢慢落成字。
       </p>
       <p class="intro__text intro__text--second">
-        若你也相信日子值得被轻轻记下，可点导航里的「文章」——愿那些字像一张便签纸，递到你手里时，还带着一点远方的风。
+        若你也相信日子值得被轻轻记下，可点导航里的「文章」——愿那些字像一张便签纸，递到你手里时，还带着一点远方的风。。
       </p>
     </section>
 
