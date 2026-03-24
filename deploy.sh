@@ -14,6 +14,9 @@ ECS_HOST="${ECS_HOST:-}"
 ECS_USER="${ECS_USER:-}"
 ECS_SSH_KEY="${ECS_SSH_KEY:-}"
 
+FRONTENDS=()
+BACKENDS=()
+
 # -----------------------------
 # 判断环境
 # -----------------------------
@@ -30,27 +33,28 @@ fi
 # -----------------------------
 CHANGED_DIRS=$(git diff --name-only origin/main HEAD | cut -d/ -f1-2 | sort | uniq)
 
-echo "$CHANGED_DIRS" | while IFS= read -r dir; do
+while IFS= read -r dir; do
+  [ -z "$dir" ] && continue
   echo "Checking directory: $dir"
-  if [[ $dir == "$FRONTEND_BASE/"* ]]; then
+
+  if [[ $dir == $FRONTEND_BASE/* ]]; then
     FRONTENDS+=("$dir")
-  elif [[ $dir == "$BACKEND_BASE/"* ]]; then
+  elif [[ $dir == $BACKEND_BASE/* ]]; then
     BACKENDS+=("$dir")
   fi
-done
+done <<< "$CHANGED_DIRS"
 
-echo "Frontends: ${FRONTENDS[@]}"
-echo "Backends: ${BACKENDS[@]}"
-
+echo "Frontends: ${FRONTENDS[*]}"
+echo "Backends: ${BACKENDS[*]}"
 
 # -----------------------------
 # 构建前端
 # -----------------------------
 for app in "${FRONTENDS[@]}"; do
   app_name=$(echo "$app" | cut -d'/' -f2)
-  echo "🚀 Building frontend: $app_name "
-  pnpm --filter $app_name install 
-  pnpm --filter $app_name build
+  echo "🚀 Building frontend: $app_name"
+  pnpm --filter "$app_name" install
+  pnpm --filter "$app_name" build
 done
 
 # -----------------------------
@@ -58,9 +62,9 @@ done
 # -----------------------------
 for service in "${BACKENDS[@]}"; do
   service_name=$(echo "$service" | cut -d'/' -f2)
-  echo "🚀 Building backend: $service_name "
-  pnpm --filter $service_name install
-  pnpm --filter $service_name build
+  echo "🚀 Building backend: $service_name"
+  pnpm --filter "$service_name" install
+  pnpm --filter "$service_name" build
 done
 
 # -----------------------------
@@ -85,7 +89,7 @@ done
 for service in "${BACKENDS[@]}"; do
   echo "=== Deploying backend: $service ==="
   rsync -avz -e "ssh -i $ECS_SSH_KEY" "$service/" "$ECS_USER@$ECS_HOST:$DEPLOY_BASE/$service/"
-  ssh -i "$ECS_SSH_KEY" "$ECS_USER@$ECS_HOST" "$PM2_CMD restart $service"
+  ssh -i "$ECS_SSH_KEY" "$ECS_USER@$ECS_HOST" "$PM2_CMD restart $(basename "$service")"
 done
 
 echo "✅ Deployment completed!"
