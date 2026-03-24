@@ -1,25 +1,21 @@
 #!/bin/bash
 set -e
 
-# -----------------------------
-# 配置
-# -----------------------------
 FRONTEND_BASE="apps"
 BACKEND_BASE="backends"
 DEPLOY_BASE="/opt/myapp"
 PM2_CMD="pm2"
 
-# SSH 配置（只在远程环境需要）
 ECS_HOST="${ECS_HOST:-}"
 ECS_USER="${ECS_USER:-}"
 ECS_SSH_KEY="${ECS_SSH_KEY:-}"
 
+GIT_BEFORE="${GIT_BEFORE:-}"
+GIT_SHA="${GIT_SHA:-HEAD}"
+
 FRONTENDS=()
 BACKENDS=()
 
-# -----------------------------
-# 判断环境
-# -----------------------------
 if [ -z "$ECS_HOST" ] || [ -z "$ECS_USER" ] || [ -z "$ECS_SSH_KEY" ]; then
   ENVIRONMENT="local"
   echo "🌱 Running in local environment – only building"
@@ -28,10 +24,17 @@ else
   echo "🚀 Running in remote environment – will build and deploy"
 fi
 
-# -----------------------------
-# 获取改动的前端和后端目录
-# -----------------------------
-CHANGED_DIRS=$(git diff --name-only origin/main HEAD | cut -d/ -f1-2 | sort | uniq)
+# 获取改动目录
+if [ -n "$GIT_BEFORE" ] && [ "$GIT_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+  echo "Comparing commits: $GIT_BEFORE -> $GIT_SHA"
+  CHANGED_DIRS=$(git diff --name-only "$GIT_BEFORE" "$GIT_SHA" | cut -d/ -f1-2 | sort -u)
+else
+  echo "Fallback to HEAD^ -> HEAD"
+  CHANGED_DIRS=$(git diff --name-only HEAD^ HEAD | cut -d/ -f1-2 | sort -u)
+fi
+
+echo "Changed dirs raw:"
+echo "$CHANGED_DIRS"
 
 while IFS= read -r dir; do
   [ -z "$dir" ] && continue
@@ -47,49 +50,43 @@ done <<< "$CHANGED_DIRS"
 echo "Frontends: ${FRONTENDS[*]}"
 echo "Backends: ${BACKENDS[*]}"
 
-# -----------------------------
-# 构建前端
-# -----------------------------
+if [ ${#FRONTENDS[@]} -eq 0 ] && [ ${#BACKENDS[@]} -eq 0 ]; then
+  echo "ℹ️ No changed frontend/backend projects detected, exiting."
+  exit 0
+fi
+
 for app in "${FRONTENDS[@]}"; do
-  app_name=$(echo "$app" | cut -d'/' -f2)
+  app_name=$(basename "$app")
   echo "🚀 Building frontend: $app_name"
   pnpm --filter "$app_name" install
   pnpm --filter "$app_name" build
 done
 
-# -----------------------------
-# 构建后端
-# -----------------------------
 for service in "${BACKENDS[@]}"; do
-  service_name=$(echo "$service" | cut -d'/' -f2)
+  service_name=$(basename "$service")
   echo "🚀 Building backend: $service_name"
   pnpm --filter "$service_name" install
   pnpm --filter "$service_name" build
 done
 
-# -----------------------------
-# 如果是本地环境，停止到这里
-# -----------------------------
 if [ "$ENVIRONMENT" = "local" ]; then
   echo "✅ Local build completed, skipping deployment"
   exit 0
 fi
 
-# -----------------------------
-# 部署前端
-# -----------------------------
 for app in "${FRONTENDS[@]}"; do
   echo "=== Deploying frontend: $app ==="
-  rsync -avz -e "ssh -i $ECS_SSH_KEY" "$app/out/" "$ECS_USER@$ECS_HOST:$DEPLOY_BASE/$app/out/"
+  rsync -avz -e "ssh -i $ECS_SSH_KEY -o StrictHostKeyChecking=no" \
+    "$app/out/" "$ECS_USER@$ECS_HOST:$DEPLOY_BASE/$app/out/"
 done
 
-# -----------------------------
-# 部署后端
-# -----------------------------
 for service in "${BACKENDS[@]}"; do
+  service_name=$(basename "$service")
   echo "=== Deploying backend: $service ==="
-  rsync -avz -e "ssh -i $ECS_SSH_KEY" "$service/" "$ECS_USER@$ECS_HOST:$DEPLOY_BASE/$service/"
-  ssh -i "$ECS_SSH_KEY" "$ECS_USER@$ECS_HOST" "$PM2_CMD restart $(basename "$service")"
+  rsync -avz -e "ssh -i $ECS_SSH_KEY -o StrictHostKeyChecking=no" \
+    "$service/" "$ECS_USER@$ECS_HOST:$DEPLOY_BASE/$service/"
+  ssh -i "$ECS_SSH_KEY" -o StrictHostKeyChecking=no "$ECS_USER@$ECS_HOST" \
+    "$PM2_CMD restart $service_name"
 done
 
 echo "✅ Deployment completed!"
