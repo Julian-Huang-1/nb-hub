@@ -1,0 +1,21 @@
+name: Deploy Workflow
+
+on:
+  push:
+    branches:
+      - main  # 当 main 分支有推送时触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run deploy script
+        run: ./deploy.sh
+        env:
+          ECS_HOST: ${{ secrets.ECS_HOST }}
+          ECS_USER: ${{ secrets.ECS_USER }}
+          ECS_SSH_KEY: ${{ secrets.ECS_SSH_KEY }}
