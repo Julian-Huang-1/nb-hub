@@ -146,7 +146,15 @@ for service in "${BACKENDS[@]}"; do
   rsync -avz --delete -e "$RSYNC_RSH" \
     "$service/" "$ECS_USER@$ECS_HOST:$remote_dir/"
 
-  $SSH_CMD "$ECS_USER@$ECS_HOST" "$PM2_CMD restart $service_name"
+  $SSH_CMD "$ECS_USER@$ECS_HOST" "
+    set -e
+    cd '$remote_dir'
+    if $PM2_CMD describe '$service_name' >/dev/null 2>&1; then
+      echo '🔄 Restarting existing PM2 service: $service_name'
+      $PM2_CMD restart '$service_name' --update-env
+    else
+      echo '🆕 Starting new PM2 service: $service_name'
+      $PM2_CMD start dist/index.js --name '$service_name'
+    fi
+  "
 done
-
-echo "✅ Deployment completed!"
