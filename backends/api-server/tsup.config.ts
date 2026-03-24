@@ -9,5 +9,6 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   bundle: true,
-  noExternal: ["express"],
+  // 与 express 一并打进单文件，运行时不再 require 外部 node_modules
+  noExternal: ["express", "cors"],
 });
