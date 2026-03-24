@@ -1,17 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
-import { site } from './site'
+import { computed } from "vue";
+import { RouterLink, RouterView, useRoute } from "vue-router";
+import { site } from "./site";
+import { fetchApi } from "./api/fetch-api";
 
-const route = useRoute()
+fetchApi().then((data) => {
+  console.log(data);
+});
+const route = useRoute();
 
 /** 首页文章列表，或正在阅读某篇文章 */
 const navPostsActive = computed(
   () =>
-    (route.name === 'home' && route.hash !== '#about') || route.name === 'post',
-)
+    (route.name === "home" && route.hash !== "#about") || route.name === "post",
+);
 
-const navAboutActive = computed(() => route.name === 'home' && route.hash === '#about')
+const navAboutActive = computed(
+  () => route.name === "home" && route.hash === "#about",
+);
 </script>
 
 <template>
