@@ -144,7 +144,7 @@ code {
   background: var(--accent-bg);
 }
 
-.nav__link.router-link-exact-active {
+.nav__link--active {
   color: var(--accent);
   font-weight: 500;
 }
@@ -168,6 +168,10 @@ code {
 .intro__text {
   color: var(--muted);
   line-height: 1.75;
+}
+
+.intro__text--second {
+  margin-top: 1rem;
 }
 
 .posts__title {

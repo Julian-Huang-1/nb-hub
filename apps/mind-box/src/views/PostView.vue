@@ -16,7 +16,7 @@ function goBack() {
   if (window.history.length > 1) {
     router.back()
   } else {
-    router.push({ name: 'home' })
+    router.push({ name: 'home', hash: '#posts' })
   }
 }
 </script>
@@ -25,7 +25,9 @@ function goBack() {
   <main v-if="post" class="main post-view">
     <nav class="post-nav" aria-label="文章导航">
       <button type="button" class="post-back" @click="goBack">← 返回</button>
-      <RouterLink class="post-nav__home" :to="{ name: 'home' }">全部文章</RouterLink>
+      <RouterLink class="post-nav__home" :to="{ name: 'home', hash: '#posts' }">
+        全部文章
+      </RouterLink>
     </nav>
 
     <article class="post-article" :aria-labelledby="'post-title-' + post.slug">
@@ -42,12 +44,16 @@ function goBack() {
     </article>
 
     <footer class="post-article__footer">
-      <RouterLink class="post-article__more" :to="{ name: 'home' }">← 回到首页</RouterLink>
+      <RouterLink class="post-article__more" :to="{ name: 'home', hash: '#posts' }">
+        ← 回到首页
+      </RouterLink>
     </footer>
   </main>
 
   <main v-else class="main post-view post-view--empty">
     <p class="post-missing">找不到这篇文章。</p>
-    <RouterLink class="post-article__more" :to="{ name: 'home' }">返回首页</RouterLink>
+    <RouterLink class="post-article__more" :to="{ name: 'home', hash: '#posts' }">
+      返回首页
+    </RouterLink>
   </main>
 </template>

@@ -20,6 +20,9 @@ const router = createRouter({
     },
   ],
   scrollBehavior(to, _from, savedPosition) {
+    if (to.name === 'home' && (to.hash === '#about' || to.hash === '#posts')) {
+      return { top: 0, behavior: 'smooth' }
+    }
     if (to.hash) {
       return { el: to.hash, behavior: 'smooth' }
     }
