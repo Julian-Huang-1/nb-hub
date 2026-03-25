@@ -5,6 +5,9 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { desc, sql } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { posts } from "./db/schema.js";
+import { analyticsRouter } from "./modules/analytics/analytics.routes.js";
+import { chatRouter } from "./modules/chat/chat.routes.js";
+import { confusionsRouter } from "./modules/confusions/confusions.routes.js";
 import { documentsRouter } from "./modules/documents/documents.routes.js";
 
 const app = express();
@@ -18,6 +21,9 @@ const migrationsFolder = process.env.MIGRATIONS_DIR ?? defaultMigrationsDir;
 app.use(cors());
 app.use(express.json());
 app.use("/documents", documentsRouter);
+app.use("/chat", chatRouter);
+app.use("/confusions", confusionsRouter);
+app.use("/analytics", analyticsRouter);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({

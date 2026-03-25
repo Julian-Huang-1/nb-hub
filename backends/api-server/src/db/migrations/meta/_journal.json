@@ -15,6 +15,13 @@
       "when": 1774442400000,
       "tag": "0001_smooth_memory_box",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774443000000,
+      "tag": "0002_late_hammerhead",
+      "breakpoints": true
     }
   ]
 }
