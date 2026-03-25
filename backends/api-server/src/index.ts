@@ -8,6 +8,7 @@ import { posts } from "./db/schema.js";
 import { analyticsRouter } from "./modules/analytics/analytics.routes.js";
 import { chatRouter } from "./modules/chat/chat.routes.js";
 import { confusionsRouter } from "./modules/confusions/confusions.routes.js";
+import { assistRouter } from "./modules/assist/assist.routes.js";
 import { documentsRouter } from "./modules/documents/documents.routes.js";
 
 const app = express();
@@ -24,6 +25,7 @@ app.use("/documents", documentsRouter);
 app.use("/chat", chatRouter);
 app.use("/confusions", confusionsRouter);
 app.use("/analytics", analyticsRouter);
+app.use("/assist", assistRouter);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({
