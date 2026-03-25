@@ -9,6 +9,11 @@ import { desc, sql } from "drizzle-orm";
 const app = express();
 const port = Number(process.env.PORT ?? 9999);
 
+// dist/index.cjs 运行时，默认迁移目录指向源码目录：../src/db/migrations
+// 你也可以用 MIGRATIONS_DIR 覆盖
+const defaultMigrationsDir = path.resolve(__dirname, "../src/db/migrations");
+const migrationsFolder = process.env.MIGRATIONS_DIR ?? defaultMigrationsDir;
+
 app.use(cors());
 app.use(express.json());
 
@@ -67,15 +72,13 @@ app.get("/db-test", async (_req, res) => {
 
 async function bootstrap() {
   // 1) 启动前执行迁移（幂等：已执行过的不会重复执行）
-  const migrationsFolder =
-    process.env.MIGRATIONS_DIR ??
-    path.resolve(process.cwd(), "./src/db/migrations");
 
   migrate(db, { migrationsFolder });
 
   // 2) 迁移成功后再启动服务
   app.listen(port, () => {
     console.log(`API server running at http://localhost:${port}`);
+    console.log(`Using migrations folder: ${migrationsFolder}`);
   });
 }
 
