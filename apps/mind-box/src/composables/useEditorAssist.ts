@@ -3,6 +3,7 @@ import type { Ref } from "vue";
 import type { SelectionIntent } from "@nb-hub/contracts";
 import { ref } from "vue";
 import { assistApi } from "../api/assist.js";
+import { getSelectionMarkdown } from "../extensions/selectionMarkdownExport.js";
 import { useDocsStore } from "../stores/docs.js";
 
 function getAroundSelection(editor: Editor) {
@@ -22,6 +23,7 @@ export function useEditorAssist(editor: Ref<Editor | undefined>) {
   const inlineCompletionLoading = ref(false);
   const assistError = ref<string | null>(null);
   let reqSeq = 0;
+  let transformReqSeq = 0;
 
   function requestInlineCompletion() {
     const ed = editor.value;
@@ -67,7 +69,10 @@ export function useEditorAssist(editor: Ref<Editor | undefined>) {
       assistError.value = "请先选中要改写的文本";
       return;
     }
-    const selectedText = ed.state.doc.textBetween(from, to, "\n");
+    /** 请求发出前固定选区；异步返回后仍替换这一段（不读当前光标）。 */
+    const savedRange = { from, to };
+    const selectedText = getSelectionMarkdown(ed);
+    const my = ++transformReqSeq;
     assistLoading.value = true;
     assistError.value = null;
     try {
@@ -77,17 +82,33 @@ export function useEditorAssist(editor: Ref<Editor | undefined>) {
         intent,
         surroundingContext: ed.getMarkdown().slice(0, 8000),
       });
-      ed.chain()
+      if (my !== transformReqSeq) return;
+      const edNow = editor.value;
+      if (!edNow) return;
+      const maxPos = edNow.state.doc.content.size;
+      let replaceFrom = Math.max(0, Math.min(savedRange.from, maxPos));
+      let replaceTo = Math.max(0, Math.min(savedRange.to, maxPos));
+      if (replaceFrom > replaceTo) {
+        [replaceFrom, replaceTo] = [replaceTo, replaceFrom];
+      }
+      if (replaceFrom >= replaceTo) {
+        assistError.value = "选区已失效，请重新选择后再试";
+        return;
+      }
+      edNow
+        .chain()
         .focus()
-        .deleteRange({ from, to })
-        .insertContentAt(from, data.replacementText, {
+        .deleteRange({ from: replaceFrom, to: replaceTo })
+        .insertContentAt(replaceFrom, data.replacementText, {
           contentType: "markdown",
         })
         .run();
     } catch (e) {
       assistError.value = e instanceof Error ? e.message : String(e);
     } finally {
-      assistLoading.value = false;
+      if (my === transformReqSeq) {
+        assistLoading.value = false;
+      }
     }
   }
 
@@ -110,7 +131,12 @@ export function useEditorAssist(editor: Ref<Editor | undefined>) {
       });
       const block = data.blocks[0]?.markdown ?? "";
       if (!block) return;
-      ed.chain().focus().insertContentAt(ed.state.selection.from, block).run();
+      ed.chain()
+        .focus()
+        .insertContentAt(ed.state.selection.from, block, {
+          contentType: "markdown",
+        })
+        .run();
     } catch (e) {
       assistError.value = e instanceof Error ? e.message : String(e);
     } finally {

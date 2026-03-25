@@ -8,6 +8,8 @@ import { RouterLink } from "vue-router";
 import { ref, watch } from "vue";
 import { documentsApi } from "../api/documents.js";
 import { useEditorAssist } from "../composables/useEditorAssist.js";
+import { MarkdownLiveShortcuts } from "../extensions/markdownLiveShortcuts.js";
+import { SelectionMarkdownExport } from "../extensions/selectionMarkdownExport.js";
 import { useDocsStore } from "../stores/docs.js";
 
 const docsStore = useDocsStore();
@@ -20,13 +22,18 @@ const saveErr = ref<string | null>(null);
 const editor = useEditor({
   extensions: [
     StarterKit,
+    MarkdownLiveShortcuts,
     Placeholder.configure({
-      placeholder: "用 Markdown 写作…（侧栏可从光标处请求内联补全并直接插入）",
+      placeholder:
+        "支持 Markdown 快捷键：#·空格 标题、**粗**、*斜*、`代码`、>·引用、-·列表、--- 分隔线、[文字](链接)…",
     }),
     Markdown,
+    SelectionMarkdownExport,
   ],
-  content: "# 未命名\n\n",
+  content: "# 未命名",
   contentType: "markdown",
+  enableInputRules: true,
+  enablePasteRules: true,
   editorProps: {
     attributes: {
       class: "docs-editor__content tiptap",
@@ -379,7 +386,6 @@ async function publishDoc() {
   font: inherit;
   resize: vertical;
 }
-
 </style>
 
 <style>
