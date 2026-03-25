@@ -9,6 +9,7 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@nb-hub/contracts": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "cors": "^2.8.6",
     "drizzle-orm": "^0.45.1",
