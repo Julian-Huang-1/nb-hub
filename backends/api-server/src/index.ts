@@ -2,9 +2,10 @@ import cors from "cors";
 import express from "express";
 import path from "node:path";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { desc, sql } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { posts } from "./db/schema.js";
-import { desc, sql } from "drizzle-orm";
+import { documentsRouter } from "./modules/documents/documents.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 9999);
@@ -16,6 +17,7 @@ const migrationsFolder = process.env.MIGRATIONS_DIR ?? defaultMigrationsDir;
 
 app.use(cors());
 app.use(express.json());
+app.use("/documents", documentsRouter);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({

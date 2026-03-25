@@ -8,6 +8,13 @@
       "when": 1774438609512,
       "tag": "0000_slim_donald_blake",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774442400000,
+      "tag": "0001_smooth_memory_box",
+      "breakpoints": true
     }
   ]
 }
