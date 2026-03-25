@@ -51,7 +51,7 @@ const navAboutActive = computed(
 
     <footer class="site-footer">
       <p class="site-footer__copy">
-        © {{ new Date().getFullYear() }} {{ site.title }} · 以文字对抗遗忘
+        © {{ new Date().getFullYear() }} {{ site.title }} · 以文字对抗遗忘~
       </p>
     </footer>
   </div>

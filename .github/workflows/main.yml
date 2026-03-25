@@ -26,7 +26,15 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      # 4. 运行你的部署脚本
+      # 4. 安装依赖
+      - name: Install dependencies
+        run: pnpm install
+
+      # 5. CI 构建校验 — 编译不过就直接失败，不会触发部署
+      - name: Build check
+        run: pnpm -r build
+
+      # 6. 运行你的部署脚本
       - name: Run deploy script
         env:
           ECS_HOST: ${{ secrets.ECS_HOST }}
