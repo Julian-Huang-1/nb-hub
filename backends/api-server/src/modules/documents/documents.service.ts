@@ -1,3 +1,8 @@
+import type {
+  CreateDocumentBody,
+  PublishDocumentBody,
+  SaveDraftBody,
+} from "@nb-hub/contracts";
 import { documentsRepository } from "./documents.repository.js";
 
 const toSlug = (value: string) =>
@@ -22,7 +27,7 @@ const requireContent = (content: unknown) => {
 };
 
 export const documentsService = {
-  createDocument(payload: { title: unknown; contentMd?: unknown }) {
+  createDocument(payload: CreateDocumentBody | Record<string, unknown>) {
     const title = requireTitle(payload.title);
     const contentMd = typeof payload.contentMd === "string" ? payload.contentMd : "";
     const baseSlug = toSlug(title) || "untitled";
@@ -51,7 +56,7 @@ export const documentsService = {
     };
   },
 
-  saveDraft(documentId: number, payload: { title?: unknown; contentMd: unknown }) {
+  saveDraft(documentId: number, payload: SaveDraftBody | Record<string, unknown>) {
     const existing = documentsRepository.findDocumentById(documentId);
     if (!existing) {
       throw new Error("document not found");
@@ -80,7 +85,7 @@ export const documentsService = {
     };
   },
 
-  publishDocument(documentId: number, payload: { title?: unknown; contentMd?: unknown }) {
+  publishDocument(documentId: number, payload: PublishDocumentBody | Record<string, unknown>) {
     const existing = documentsRepository.findDocumentById(documentId);
     if (!existing) {
       throw new Error("document not found");

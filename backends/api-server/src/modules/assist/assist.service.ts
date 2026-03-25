@@ -1,8 +1,18 @@
 import { randomUUID } from "node:crypto";
+import type {
+  AssistCursorDto,
+  AssistFeedbackAction,
+  AssistFeedbackBody,
+  AssistFeature,
+  CursorGenerationsBody,
+  InlineCompletionsBody,
+  InlineCompletionsCancelBody,
+  SelectionIntent,
+  SelectionTransformBody,
+} from "@nb-hub/contracts";
 import { assistOrchestrator } from "../ai/assist-orchestrator.js";
-import type { AssistFeature, AssistFeedbackAction, SelectionIntent } from "./assist.types.js";
 
-const VALID_INTENTS: SelectionIntent[] = [
+const VALID_INTENTS: readonly SelectionIntent[] = [
   "shorten",
   "expand",
   "academic",
@@ -18,22 +28,20 @@ const parseOptionalDocumentId = (value: unknown): number | undefined => {
   return n;
 };
 
-const parseCursor = (body: Record<string, unknown>) => {
+const parseCursor = (body: { cursor?: AssistCursorDto }): AssistCursorDto | undefined => {
   const c = body.cursor;
-  if (c && typeof c === "object" && c !== null) {
-    const o = c as Record<string, unknown>;
-    if (typeof o.offset === "number" && Number.isInteger(o.offset) && o.offset >= 0) {
-      return { offset: o.offset, line: o.line, column: o.column };
-    }
-    if (typeof o.line === "number" && typeof o.column === "number") {
-      return { line: o.line, column: o.column, offset: o.offset };
-    }
+  if (!c || typeof c !== "object") return undefined;
+  if (typeof c.offset === "number" && Number.isInteger(c.offset) && c.offset >= 0) {
+    return { offset: c.offset, line: c.line, column: c.column };
+  }
+  if (typeof c.line === "number" && typeof c.column === "number") {
+    return { line: c.line, column: c.column, offset: c.offset };
   }
   return undefined;
 };
 
 export const assistService = {
-  inlineCompletions(body: Record<string, unknown>) {
+  inlineCompletions(body: InlineCompletionsBody | Record<string, unknown>) {
     parseOptionalDocumentId(body.documentId);
     const prefixText = typeof body.prefixText === "string" ? body.prefixText : "";
     const suffixText = typeof body.suffixText === "string" ? body.suffixText : "";
@@ -55,12 +63,12 @@ export const assistService = {
     };
   },
 
-  acknowledgeCancel(body: Record<string, unknown>) {
+  acknowledgeCancel(body: InlineCompletionsCancelBody | Record<string, unknown>) {
     const requestId = typeof body.requestId === "string" ? body.requestId : undefined;
     return { ok: true as const, cancelled: Boolean(requestId), requestId };
   },
 
-  selectionTransform(body: Record<string, unknown>) {
+  selectionTransform(body: SelectionTransformBody | Record<string, unknown>) {
     parseOptionalDocumentId(body.documentId);
     const selectedText = typeof body.selectedText === "string" ? body.selectedText : "";
     if (!selectedText.trim()) throw new Error("selectedText is required");
@@ -95,7 +103,7 @@ export const assistService = {
     };
   },
 
-  cursorGenerations(body: Record<string, unknown>) {
+  cursorGenerations(body: CursorGenerationsBody | Record<string, unknown>) {
     parseOptionalDocumentId(body.documentId);
     const intent = typeof body.intent === "string" ? body.intent.trim() : "";
     if (!intent) throw new Error("intent is required");
@@ -123,7 +131,7 @@ export const assistService = {
     };
   },
 
-  recordFeedback(body: Record<string, unknown>) {
+  recordFeedback(body: AssistFeedbackBody | Record<string, unknown>) {
     const requestId = typeof body.requestId === "string" ? body.requestId : "";
     const action = body.action as AssistFeedbackAction;
     const feature = body.feature as AssistFeature;

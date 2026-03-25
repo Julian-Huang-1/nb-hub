@@ -3,7 +3,7 @@ import type {
   InlineCompletionsResult,
   SelectionIntent,
   SelectionTransformResult,
-} from "../assist/assist.types.js";
+} from "@nb-hub/contracts";
 
 const MODEL_STUB = "stub-assist-v1";
 

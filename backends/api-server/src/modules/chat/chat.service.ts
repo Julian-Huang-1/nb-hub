@@ -1,9 +1,10 @@
+import type { AskBody, CreateChatSessionBody } from "@nb-hub/contracts";
 import { aiOrchestrator } from "../ai/ai-orchestrator.js";
 import { confusionsRepository } from "../confusions/confusions.repository.js";
 import { chatRepository } from "./chat.repository.js";
 
 export const chatService = {
-  createSession(payload: { title?: unknown }) {
+  createSession(payload: CreateChatSessionBody | Record<string, unknown>) {
     const title =
       typeof payload.title === "string" && payload.title.trim()
         ? payload.title.trim()
@@ -24,16 +25,17 @@ export const chatService = {
     };
   },
 
-  ask(payload: { sessionId: number; question: unknown }) {
-    const session = chatRepository.findSessionById(payload.sessionId);
+  ask(sessionId: number, body: AskBody | Record<string, unknown>) {
+    const session = chatRepository.findSessionById(sessionId);
     if (!session) throw new Error("session not found");
-    if (typeof payload.question !== "string" || payload.question.trim().length === 0) {
+    const rawQ = "question" in body ? body.question : undefined;
+    if (typeof rawQ !== "string" || rawQ.trim().length === 0) {
       throw new Error("question is required");
     }
 
-    const question = payload.question.trim();
+    const question = rawQ.trim();
     const userMessage = chatRepository.createMessage({
-      sessionId: payload.sessionId,
+      sessionId,
       role: "user",
       content: question,
     });
@@ -41,7 +43,7 @@ export const chatService = {
     const extracted = aiOrchestrator.extractConfusions({ question });
     const createdConfusions = extracted.map((item) =>
       confusionsRepository.createConfusion({
-        sessionId: payload.sessionId,
+        sessionId,
         sourceMessageId: userMessage.id,
         title: item.title,
         description: item.description,
@@ -51,7 +53,7 @@ export const chatService = {
 
     const answer = aiOrchestrator.buildAssistantReply({ question });
     const assistantMessage = chatRepository.createMessage({
-      sessionId: payload.sessionId,
+      sessionId,
       role: "assistant",
       content: answer,
       metadataJson: JSON.stringify({
@@ -59,7 +61,7 @@ export const chatService = {
       }),
     });
 
-    chatRepository.updateSessionUpdatedAt(payload.sessionId);
+    chatRepository.updateSessionUpdatedAt(sessionId);
 
     return {
       userMessage,

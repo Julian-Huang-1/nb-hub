@@ -1,3 +1,4 @@
+import type { ConfusionStatsDto } from "@nb-hub/contracts";
 import { confusionsRepository } from "../confusions/confusions.repository.js";
 
 const getStartOfWeek = () => {
@@ -13,7 +14,7 @@ const getStartOfWeek = () => {
 const periodKey = (date: Date) => date.toISOString().slice(0, 10);
 
 export const analyticsService = {
-  getConfusionStats() {
+  getConfusionStats(): ConfusionStatsDto {
     const weekStart = getStartOfWeek();
     const total = confusionsRepository.countAll();
     const open = confusionsRepository.countByStatus("open");
