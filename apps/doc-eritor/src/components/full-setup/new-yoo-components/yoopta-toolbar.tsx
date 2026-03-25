@@ -17,12 +17,14 @@ export const YooptaToolbar = () => {
   const editor = useYooptaEditor();
   const turnIntoRef = useRef<HTMLButtonElement>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLButtonElement | null>(null);
 
   const highlightValue = Marks.getValue(editor, { type: 'highlight' }) as
     | { color?: string; backgroundColor?: string }
     | null;
 
   const onTurnIntoClick = () => {
+    setActionMenuAnchor(turnIntoRef.current);
     setActionMenuOpen(true);
   };
 
@@ -131,7 +133,7 @@ export const YooptaToolbar = () => {
       <YooptaActionMenuList
         open={actionMenuOpen}
         onOpenChange={setActionMenuOpen}
-        anchor={turnIntoRef.current}
+        anchor={actionMenuAnchor}
         placement='bottom-start'
       />
     </>

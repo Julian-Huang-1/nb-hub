@@ -13,8 +13,10 @@ export const YooptaBlockOptions = ({ open, onOpenChange, blockId, anchor }: Yoop
   const { duplicateBlock, copyBlockLink, deleteBlock } = useBlockActions();
   const turnIntoRef = useRef<HTMLButtonElement>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLButtonElement | null>(null);
 
   const onTurnInto = () => {
+    setActionMenuAnchor(turnIntoRef.current);
     setActionMenuOpen(true);
   };
 
@@ -62,7 +64,7 @@ export const YooptaBlockOptions = ({ open, onOpenChange, blockId, anchor }: Yoop
           </BlockOptions.Group>
         </BlockOptions.Content>
       </BlockOptions>
-      <YooptaActionMenuList placement='right-start' open={actionMenuOpen} onOpenChange={onActionMenuClose} anchor={turnIntoRef.current} />
+      <YooptaActionMenuList placement='right-start' open={actionMenuOpen} onOpenChange={onActionMenuClose} anchor={actionMenuAnchor} />
     </>
   );
 };

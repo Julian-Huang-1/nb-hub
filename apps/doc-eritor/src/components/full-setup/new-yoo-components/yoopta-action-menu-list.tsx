@@ -1,5 +1,5 @@
 import { ActionMenuList } from '@yoopta/ui/action-menu-list';
-import { Placement } from '@floating-ui/dom';
+import type { Placement } from '@floating-ui/dom';
 
 type Props = {
   open: boolean;

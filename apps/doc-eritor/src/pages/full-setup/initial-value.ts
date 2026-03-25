@@ -1,6 +1,6 @@
 import type { YooptaContentValue } from "@yoopta/editor";
 
-export const fullSetupInitialValue: YooptaContentValue = {
+export const fullSetupInitialValue = {
   "fs-h1": {
     "id": "fs-h1",
     "type": "HeadingOne",
@@ -1967,4 +1967,4 @@ export const fullSetupInitialValue: YooptaContentValue = {
       }
     ]
   }
-}
+} as unknown as YooptaContentValue;

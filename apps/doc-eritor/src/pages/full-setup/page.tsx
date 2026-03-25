@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { FullSetupEditor } from "@/components/playground/examples/full-setup/editor";
+import { FullSetupEditor } from "@/components/full-setup/editor";
 import { fullSetupInitialValue } from "./initial-value";
 
 export default function FullSetupPage() {

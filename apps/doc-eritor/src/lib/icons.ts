@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import {
   CodeIcon,
   FileIcon,
@@ -20,7 +21,7 @@ import {
   TableOfContentsIcon,
 } from 'lucide-react';
 
-export const COMMAND_MENU_DEFAULT_ICONS_MAP: Record<string, React.ComponentType<{ width?: number; height?: number }>> = {
+export const COMMAND_MENU_DEFAULT_ICONS_MAP: Record<string, LucideIcon> = {
   Paragraph: TextIcon,
   HeadingOne: Heading1Icon,
   HeadingTwo: Heading2Icon,

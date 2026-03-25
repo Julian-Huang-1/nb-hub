@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import YooptaEditor, { createYooptaEditor, RenderBlockProps, SlateElement, YooptaContentValue, YooptaPlugin } from '@yoopta/editor'
+import YooptaEditor, {
+  createYooptaEditor,
+  type RenderBlockProps,
+  type SlateElement,
+  type YooptaContentValue,
+  type YooptaPlugin,
+} from '@yoopta/editor'
 
 import { YOOPTA_PLUGINS } from './plugins';
 import { YOOPTA_MARKS } from './marks';
