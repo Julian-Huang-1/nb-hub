@@ -13,7 +13,5 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   sourcemap: true,
-  bundle: true,
-  // 与 express 一并打进单文件，运行时不再 require 外部 node_modules
-  noExternal: Object.keys(pkg.dependencies ?? {}),
+  external: ["better-sqlite3", "drizzle-orm"],
 });
