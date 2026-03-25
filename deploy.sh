@@ -41,19 +41,15 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s << 'REMOTE_SCRIPT'
   echo "=== Building all packages ==="
   pnpm -r build
 
-  echo "=== Reloading backend services ==="
-  for service_dir in backends/*/; do
-    [ ! -d "$service_dir/dist" ] && continue
-    service_name=$(basename "$service_dir")
+echo "=== Reloading backend services ==="
+echo "=== Reloading services via ecosystem ==="
+if $PM2_CMD describe "api-server" >/dev/null 2>&1; then
+  $PM2_CMD reload "$PROJECT_DIR/ecosystem.config.js" --update-env
+else
+  $PM2_CMD start "$PROJECT_DIR/ecosystem.config.js"
+fi
 
-    if $PM2_CMD describe "$service_name" >/dev/null 2>&1; then
-      echo "Reloading: $service_name"
-      $PM2_CMD reload "$service_name"
-    else
-      echo "Starting: $service_name"
-      $PM2_CMD start "$service_dir/dist/index.cjs" --name "$service_name"
-    fi
-  done
+$PM2_CMD save
 
   echo "=== Deploy complete ==="
 REMOTE_SCRIPT

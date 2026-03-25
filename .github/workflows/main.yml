@@ -30,7 +30,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # 5. CI 构建校验 — 编译不过就直接失败，不会触发部署
+        # 5. Drizzle：schema 与 migrations 必须一致（漏跑 generate 会失败）
+      - name: Drizzle schema / migrations check
+        run: pnpm --filter @nb-hub/api-server exec drizzle-kit check
+
+      # 6. CI 构建校验 — 编译不过就直接失败，不会触发部署
       - name: Build check
         run: pnpm -r build
 
