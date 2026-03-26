@@ -36,7 +36,7 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s << 'REMOTE_SCRIPT'
   git reset --hard origin/main
 
   echo "=== Installing dependencies ==="
-  pnpm install --frozen-lockfile
+  pnpm install 
 
   echo "=== Building all packages ==="
   pnpm -r build
