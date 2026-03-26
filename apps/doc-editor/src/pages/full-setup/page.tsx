@@ -5,11 +5,18 @@ import type { DocumentDto } from "@nb-hub/contracts";
 import type { YooptaContentValue } from "@yoopta/editor";
 import { FullSetupEditor } from "@/components/full-setup/editor";
 import {
+  TopMenuBar,
+  TopMenuBarButton,
+  TopMenuBarInner,
+  TopMenuBarSection,
+} from "@/components/top-menu-bar";
+import {
   Sider,
   SiderContent,
   SiderHeader,
   SiderItemButton,
 } from "@/components/sider";
+import { cn } from "@/lib/utils";
 import { fullSetupInitialValue } from "./initial-value";
 import { documentsApi } from "@/api/documents";
 
@@ -61,6 +68,7 @@ export default function FullSetupPage() {
   const [loading, setLoading] = useState<
     "create" | "save" | "publish" | "load" | null
   >(null);
+  const [isSiderCollapsed, setIsSiderCollapsed] = useState(false);
   const [message, setMessage] = useState<string>("");
 
   const contentMd = useMemo(() => toContentMd(editorValue), [editorValue]);
@@ -73,9 +81,7 @@ export default function FullSetupPage() {
         if (cancelled) {
           return;
         }
-        setHistoryDocuments(
-          docs.sort((a, b) => a.id - b.id).map(toHistoryItem),
-        );
+        setHistoryDocuments(docs.map(toHistoryItem));
       } catch (error) {
         if (!cancelled) {
           setMessage(
@@ -185,10 +191,14 @@ export default function FullSetupPage() {
   };
 
   return (
-    <div className="py-6">
-      <Sider>
+    <div>
+      <Sider
+        collapsible={false}
+        collapsed={isSiderCollapsed}
+        onCollapsedChange={setIsSiderCollapsed}
+      >
         <SiderHeader>历史文档</SiderHeader>
-        <SiderContent className="max-h-[70vh]">
+        <SiderContent className="max-h-[calc(100vh-7rem)]">
           {historyDocuments.length === 0 ? (
             <div className="text-xs text-gray-500">暂无历史文档</div>
           ) : (
@@ -210,38 +220,46 @@ export default function FullSetupPage() {
         </SiderContent>
       </Sider>
 
-      <div className="px-4 sm:px-8 lg:pl-[288px] lg:pr-12">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <input
-              className="h-10 min-w-56 flex-1 rounded border px-3 text-sm"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="输入文档标题"
-            />
-            <button
-              className="h-10 rounded border px-3 text-sm disabled:opacity-50"
+      <TopMenuBar>
+        <TopMenuBarInner>
+          <TopMenuBarSection>
+            <TopMenuBarButton
+              onClick={() => setIsSiderCollapsed((value) => !value)}
+            >
+              {isSiderCollapsed ? "展开侧栏" : "收起侧栏"}
+            </TopMenuBarButton>
+          </TopMenuBarSection>
+          <TopMenuBarSection className="ml-auto">
+            <TopMenuBarButton
               disabled={loading !== null}
               onClick={handleCreate}
             >
               {loading === "create" ? "创建中..." : "创建文档"}
-            </button>
-            <button
-              className="h-10 rounded border px-3 text-sm disabled:opacity-50"
+            </TopMenuBarButton>
+            <TopMenuBarButton
               disabled={loading !== null || documentId === null}
               onClick={handleSaveDraft}
             >
               {loading === "save" ? "保存中..." : "保存文档"}
-            </button>
-            <button
-              className="h-10 rounded border px-3 text-sm disabled:opacity-50"
+            </TopMenuBarButton>
+            <TopMenuBarButton
+              variant="default"
               disabled={loading !== null || documentId === null}
               onClick={handlePublish}
             >
               {loading === "publish" ? "发布中..." : "发布文档"}
-            </button>
-          </div>
+            </TopMenuBarButton>
+          </TopMenuBarSection>
+        </TopMenuBarInner>
+      </TopMenuBar>
 
+      <div
+        className={cn(
+          "pt-20 px-4 sm:px-8 lg:pr-12",
+          isSiderCollapsed ? "lg:pl-[88px]" : "lg:pl-[288px]",
+        )}
+      >
+        <div className="mx-auto max-w-6xl">
           <div className="mb-3 text-sm text-gray-600">
             {documentId ? `当前文档 ID: ${documentId}` : "请先创建文档"}
             {message ? ` | ${message}` : ""}

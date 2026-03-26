@@ -33,7 +33,7 @@ export function Sider({
     <aside
       data-collapsed={isCollapsed ? "true" : "false"}
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen min-h-screen border-r bg-card text-card-foreground transition-all",
+        "fixed bottom-0 left-0 top-16 z-40 h-[calc(100vh-4rem)] border-r bg-card text-card-foreground transition-all",
         isCollapsed ? "w-14 p-2" : "w-64 p-3",
         className,
       )}
