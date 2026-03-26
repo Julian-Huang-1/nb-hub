@@ -39,7 +39,7 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s << 'REMOTE_SCRIPT'
   pnpm install 
 
   echo "=== Building all packages ==="
-  pnpm -r build
+  pnpm -r --workspace-concurrency=1 build
 
 echo "=== Reloading backend services ==="
 echo "=== Reloading services via ecosystem ==="
