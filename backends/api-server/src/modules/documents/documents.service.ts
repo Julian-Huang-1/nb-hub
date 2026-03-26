@@ -27,6 +27,10 @@ const requireContent = (content: unknown) => {
 };
 
 export const documentsService = {
+  listDocuments() {
+    return documentsRepository.listDocuments();
+  },
+
   createDocument(payload: CreateDocumentBody | Record<string, unknown>) {
     const title = requireTitle(payload.title);
     const contentMd = typeof payload.contentMd === "string" ? payload.contentMd : "";

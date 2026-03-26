@@ -14,6 +14,10 @@ type SaveDraftInput = {
 };
 
 export const documentsRepository = {
+  listDocuments: () => {
+    return db.select().from(documents).orderBy(desc(documents.updatedAt)).all();
+  },
+
   createDocument: ({ title, slug }: CreateDocumentInput) => {
     const now = new Date();
     const [document] = db

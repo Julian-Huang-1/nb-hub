@@ -38,6 +38,9 @@ export type DocumentVersionDto = {
 /** `POST /documents` */
 export type CreateDocumentResponseData = DocumentDto;
 
+/** `GET /documents` */
+export type ListDocumentsResponseData = DocumentDto[];
+
 /** `PUT /documents/:id/draft` | `POST /documents/:id/publish` */
 export type SaveOrPublishDocumentResponseData = {
   document: DocumentDto | undefined;

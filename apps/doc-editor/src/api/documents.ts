@@ -1,6 +1,8 @@
 import type {
   CreateDocumentBody,
   CreateDocumentResponseData,
+  GetDocumentResponseData,
+  ListDocumentsResponseData,
   PublishDocumentBody,
   SaveDraftBody,
   SaveOrPublishDocumentResponseData,
@@ -8,6 +10,10 @@ import type {
 import { apiOkData } from "./http.js";
 
 export const documentsApi = {
+  list() {
+    return apiOkData<ListDocumentsResponseData>("/documents");
+  },
+
   create(body: CreateDocumentBody) {
     return apiOkData<CreateDocumentResponseData>("/documents", {
       method: "POST",
@@ -27,5 +33,9 @@ export const documentsApi = {
       method: "POST",
       body: JSON.stringify(body),
     });
+  },
+
+  getById(id: number) {
+    return apiOkData<GetDocumentResponseData>(`/documents/${id}`);
   },
 };

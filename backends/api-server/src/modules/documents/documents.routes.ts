@@ -1,8 +1,4 @@
-import {
-  Router,
-  type Request,
-  type Response,
-} from "express";
+import { Router, type Request, type Response } from "express";
 import type {
   CreateDocumentBody,
   PublishDocumentBody,
@@ -22,10 +18,10 @@ const parseDocumentId = (value: string) => {
 
 export const documentsRouter = Router();
 
-documentsRouter.post("/", (req: Request<unknown, unknown, CreateDocumentBody>, res: Response) => {
+documentsRouter.get("/", (_req: Request, res: Response) => {
   try {
-    const data = documentsService.createDocument(req.body ?? {});
-    res.status(201).json({ status: "ok", data });
+    const data = documentsService.listDocuments();
+    res.status(200).json({ status: "ok", data });
   } catch (error) {
     res.status(400).json({
       status: "error",
@@ -33,6 +29,21 @@ documentsRouter.post("/", (req: Request<unknown, unknown, CreateDocumentBody>, r
     });
   }
 });
+
+documentsRouter.post(
+  "/",
+  (req: Request<unknown, unknown, CreateDocumentBody>, res: Response) => {
+    try {
+      const data = documentsService.createDocument(req.body ?? {});
+      res.status(201).json({ status: "ok", data });
+    } catch (error) {
+      res.status(400).json({
+        status: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+);
 
 documentsRouter.put(
   "/:id/draft",
@@ -76,14 +87,17 @@ documentsRouter.get("/:id", (req: Request<IdParams>, res: Response) => {
   }
 });
 
-documentsRouter.get("/:id/versions", (req: Request<IdParams>, res: Response) => {
-  try {
-    const documentId = parseDocumentId(req.params.id);
-    const data = documentsService.listVersions(documentId);
-    res.status(200).json({ status: "ok", data });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const statusCode = message === "document not found" ? 404 : 400;
-    res.status(statusCode).json({ status: "error", message });
-  }
-});
+documentsRouter.get(
+  "/:id/versions",
+  (req: Request<IdParams>, res: Response) => {
+    try {
+      const documentId = parseDocumentId(req.params.id);
+      const data = documentsService.listVersions(documentId);
+      res.status(200).json({ status: "ok", data });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const statusCode = message === "document not found" ? 404 : 400;
+      res.status(statusCode).json({ status: "error", message });
+    }
+  },
+);
