@@ -4,6 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DocumentDto } from "@nb-hub/contracts";
 import type { YooptaContentValue } from "@yoopta/editor";
 import { FullSetupEditor } from "@/components/full-setup/editor";
+import {
+  Sider,
+  SiderContent,
+  SiderHeader,
+  SiderItemButton,
+} from "@/components/sider";
 import { fullSetupInitialValue } from "./initial-value";
 import { documentsApi } from "@/api/documents";
 
@@ -179,39 +185,33 @@ export default function FullSetupPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 sm:px-8 lg:px-12">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="h-fit rounded border bg-white p-3">
-          <div className="mb-2 text-sm font-medium">历史文档</div>
-          <div className="max-h-[70vh] space-y-2 overflow-y-auto pr-1">
-            {historyDocuments.length === 0 ? (
-              <div className="text-xs text-gray-500">暂无历史文档</div>
-            ) : (
-              historyDocuments.map((doc) => (
-                <button
-                  key={doc.id}
-                  type="button"
-                  className={`w-full rounded border px-2 py-2 text-left text-xs hover:bg-gray-50 ${
-                    documentId === doc.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200"
-                  }`}
-                  onClick={() => handleOpenFromHistory(doc.id)}
-                  disabled={loading !== null}
-                >
-                  <div className="truncate text-sm font-medium text-gray-900">
-                    {doc.title}
-                  </div>
-                  <div className="mt-1 text-gray-500">
+    <div className="py-6">
+      <Sider>
+        <SiderHeader>历史文档</SiderHeader>
+        <SiderContent className="max-h-[70vh]">
+          {historyDocuments.length === 0 ? (
+            <div className="text-xs text-gray-500">暂无历史文档</div>
+          ) : (
+            historyDocuments.map((doc) => (
+              <SiderItemButton
+                key={doc.id}
+                active={documentId === doc.id}
+                title={doc.title}
+                description={
+                  <>
                     #{doc.id} | {doc.status}
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        </aside>
+                  </>
+                }
+                onClick={() => handleOpenFromHistory(doc.id)}
+                disabled={loading !== null}
+              />
+            ))
+          )}
+        </SiderContent>
+      </Sider>
 
-        <div>
+      <div className="px-4 sm:px-8 lg:pl-[288px] lg:pr-12">
+        <div className="mx-auto max-w-6xl">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <input
               className="h-10 min-w-56 flex-1 rounded border px-3 text-sm"
