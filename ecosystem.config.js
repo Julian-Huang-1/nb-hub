@@ -11,9 +11,9 @@ module.exports = {
         BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
         BETTER_AUTH_URL: "https://api.hjxgogogo.me/auth",
         BETTER_AUTH_TRUSTED_ORIGINS:
-          "https://hjxgogogo.me,https://editor.hjxgogogo.me,https://mindbox.hjxgogogo.me",
+          "https://hjxgogogo.me,https://editor.hjxgogogo.me,https://mindbox.hjxgogogo.me,http://localhost:4173",
         CORS_ALLOWED_ORIGINS:
-          "https://hjxgogogo.me,https://editor.hjxgogogo.me,https://mindbox.hjxgogogo.me",
+          "https://hjxgogogo.me,https://editor.hjxgogogo.me,https://mindbox.hjxgogogo.me,http://localhost:4173",
       },
     },
   ],
