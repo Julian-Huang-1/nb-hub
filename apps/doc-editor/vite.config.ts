@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -14,6 +15,19 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      plugins: [
+        visualizer({
+          filename: "dist/stats.html",
+          template: "treemap", // 也可 sunburst/network
+          gzipSize: true,
+          brotliSize: true,
+          open: false, // 想自动打开就改 true
+        }),
+      ],
     },
   },
 }));

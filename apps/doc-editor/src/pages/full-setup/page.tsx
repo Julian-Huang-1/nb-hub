@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { FullSetupEditor } from "@/components/full-setup/editor";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   TopMenuBar,
   TopMenuBarButton,
@@ -16,6 +15,46 @@ import {
 } from "@/components/sider";
 import { cn } from "@/lib/utils";
 import { useFullSetupStore } from "@/stores/full-setup-store";
+
+const FullSetupEditor = lazy(() =>
+  import("@/components/full-setup/editor").then((module) => ({
+    default: module.FullSetupEditor,
+  })),
+);
+
+const preloadYooptaModules = async () => {
+  await Promise.all([
+    import("@yoopta/editor"),
+    import("@yoopta/marks"),
+    import("@yoopta/themes-shadcn"),
+    import("@yoopta/ui/block-dnd"),
+    import("@yoopta/ui/floating-toolbar"),
+    import("@yoopta/ui/highlight-color-picker"),
+    import("@yoopta/ui/selection-box"),
+    import("@yoopta/ui/slash-command-menu"),
+    import("@yoopta/paragraph"),
+    import("@yoopta/headings"),
+    import("@yoopta/lists"),
+    import("@yoopta/link"),
+    import("@yoopta/blockquote"),
+    import("@yoopta/code"),
+    import("@yoopta/divider"),
+    import("@yoopta/table"),
+    import("@yoopta/table-of-contents"),
+    import("@yoopta/file"),
+    import("@yoopta/image"),
+    import("@yoopta/video"),
+    import("@yoopta/embed"),
+    import("@yoopta/carousel"),
+    import("@yoopta/tabs"),
+    import("@yoopta/steps"),
+    import("@yoopta/accordion"),
+    import("@yoopta/callout"),
+    import("@yoopta/emoji"),
+    import("@yoopta/mention"),
+    import("@/components/full-setup/editor"),
+  ]);
+};
 
 export default function FullSetupPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +78,10 @@ export default function FullSetupPage() {
   useEffect(() => {
     void initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    void preloadYooptaModules();
+  }, []);
 
   return (
     <div>
@@ -123,12 +166,20 @@ export default function FullSetupPage() {
           </div>
 
           <div className="py-2" ref={containerRef}>
-            <FullSetupEditor
-              key={`${documentId ?? "new"}-${editorSeed}`}
-              initialValue={editorInitialValue}
-              containerBoxRef={containerRef}
-              onChange={setEditorValue}
-            />
+            <Suspense
+              fallback={
+                <div className="flex min-h-[320px] items-center justify-center rounded-lg border border-dashed border-gray-300 text-sm text-gray-500">
+                  编辑器模块加载中...
+                </div>
+              }
+            >
+              <FullSetupEditor
+                key={`${documentId ?? "new"}-${editorSeed}`}
+                initialValue={editorInitialValue}
+                containerBoxRef={containerRef}
+                onChange={setEditorValue}
+              />
+            </Suspense>
           </div>
         </div>
       </div>
