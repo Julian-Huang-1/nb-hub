@@ -4,6 +4,7 @@ import { confusionResolutions, confusions, solutionDocs } from "../../db/schema.
 
 export const confusionsRepository = {
   createConfusion: (payload: {
+    userId: string;
     sessionId: number;
     sourceMessageId: number;
     title: string;
@@ -13,6 +14,7 @@ export const confusionsRepository = {
     const [row] = db
       .insert(confusions)
       .values({
+        userId: payload.userId,
         sessionId: payload.sessionId,
         sourceMessageId: payload.sourceMessageId,
         title: payload.title,
@@ -25,27 +27,36 @@ export const confusionsRepository = {
     return row;
   },
 
-  listConfusions: (status?: string) => {
+  listConfusions: (userId: string, status?: string) => {
     if (status) {
       return db
         .select()
         .from(confusions)
-        .where(eq(confusions.status, status))
+        .where(and(eq(confusions.userId, userId), eq(confusions.status, status)))
         .orderBy(desc(confusions.id))
         .all();
     }
-    return db.select().from(confusions).orderBy(desc(confusions.id)).all();
+    return db
+      .select()
+      .from(confusions)
+      .where(eq(confusions.userId, userId))
+      .orderBy(desc(confusions.id))
+      .all();
   },
 
-  findConfusionById: (confusionId: number) => {
-    return db.select().from(confusions).where(eq(confusions.id, confusionId)).get();
+  findConfusionById: (userId: string, confusionId: number) => {
+    return db
+      .select()
+      .from(confusions)
+      .where(and(eq(confusions.id, confusionId), eq(confusions.userId, userId)))
+      .get();
   },
 
-  updateConfusionResolved: (confusionId: number) => {
+  updateConfusionResolved: (userId: string, confusionId: number) => {
     const [row] = db
       .update(confusions)
       .set({ status: "resolved", resolvedAt: new Date() })
-      .where(eq(confusions.id, confusionId))
+      .where(and(eq(confusions.id, confusionId), eq(confusions.userId, userId)))
       .returning()
       .all();
     return row;

@@ -27,30 +27,32 @@ const requireContent = (content: unknown) => {
 };
 
 export const documentsService = {
-  listDocuments() {
-    return documentsRepository.listDocuments();
+  listDocuments(userId: string) {
+    return documentsRepository.listDocuments(userId);
   },
 
-  createDocument(payload: CreateDocumentBody | Record<string, unknown>) {
+  createDocument(userId: string, payload: CreateDocumentBody | Record<string, unknown>) {
     const title = requireTitle(payload.title);
     const contentMd = typeof payload.contentMd === "string" ? payload.contentMd : "";
     const baseSlug = toSlug(title) || "untitled";
 
     let slug = baseSlug;
     let counter = 1;
-    while (documentsRepository.findDocumentBySlug(slug)) {
+    // documents.slug is globally unique in current schema,
+    // so we must de-duplicate against all rows, not only current user.
+    while (documentsRepository.findDocumentBySlugGlobal(slug)) {
       slug = `${baseSlug}-${counter}`;
       counter += 1;
     }
 
-    const document = documentsRepository.createDocument({ title, slug });
+    const document = documentsRepository.createDocument({ userId, title, slug });
     const firstVersion = documentsRepository.createVersion({
       documentId: document.id,
       title,
       contentMd,
     });
 
-    documentsRepository.updateDocumentMeta(document.id, {
+    documentsRepository.updateDocumentMeta(userId, document.id, {
       currentVersionId: firstVersion.id,
     });
 
@@ -60,8 +62,8 @@ export const documentsService = {
     };
   },
 
-  saveDraft(documentId: number, payload: SaveDraftBody | Record<string, unknown>) {
-    const existing = documentsRepository.findDocumentById(documentId);
+  saveDraft(userId: string, documentId: number, payload: SaveDraftBody | Record<string, unknown>) {
+    const existing = documentsRepository.findDocumentById(userId, documentId);
     if (!existing) {
       throw new Error("document not found");
     }
@@ -76,7 +78,7 @@ export const documentsService = {
       contentMd,
     });
 
-    const updated = documentsRepository.updateDocumentMeta(documentId, {
+    const updated = documentsRepository.updateDocumentMeta(userId, documentId, {
       title,
       status: "draft",
       currentVersionId: version.id,
@@ -89,8 +91,12 @@ export const documentsService = {
     };
   },
 
-  publishDocument(documentId: number, payload: PublishDocumentBody | Record<string, unknown>) {
-    const existing = documentsRepository.findDocumentById(documentId);
+  publishDocument(
+    userId: string,
+    documentId: number,
+    payload: PublishDocumentBody | Record<string, unknown>,
+  ) {
+    const existing = documentsRepository.findDocumentById(userId, documentId);
     if (!existing) {
       throw new Error("document not found");
     }
@@ -117,7 +123,7 @@ export const documentsService = {
       contentMd,
     });
 
-    const updated = documentsRepository.updateDocumentMeta(documentId, {
+    const updated = documentsRepository.updateDocumentMeta(userId, documentId, {
       title,
       status: "published",
       currentVersionId: publishVersion.id,
@@ -131,8 +137,8 @@ export const documentsService = {
     };
   },
 
-  getDocument(documentId: number) {
-    const document = documentsRepository.findDocumentById(documentId);
+  getDocument(userId: string, documentId: number) {
+    const document = documentsRepository.findDocumentById(userId, documentId);
     if (!document) {
       throw new Error("document not found");
     }
@@ -146,22 +152,22 @@ export const documentsService = {
     };
   },
 
-  listVersions(documentId: number) {
-    const document = documentsRepository.findDocumentById(documentId);
+  listVersions(userId: string, documentId: number) {
+    const document = documentsRepository.findDocumentById(userId, documentId);
     if (!document) {
       throw new Error("document not found");
     }
     return documentsRepository.listDocumentVersions(documentId);
   },
 
-  deleteDocument(documentId: number) {
-    const existing = documentsRepository.findDocumentById(documentId);
+  deleteDocument(userId: string, documentId: number) {
+    const existing = documentsRepository.findDocumentById(userId, documentId);
     if (!existing) {
       throw new Error("document not found");
     }
 
     documentsRepository.deleteDocumentVersions(documentId);
-    const deleted = documentsRepository.deleteDocument(documentId);
+    const deleted = documentsRepository.deleteDocument(userId, documentId);
     if (!deleted) {
       throw new Error("document not found");
     }

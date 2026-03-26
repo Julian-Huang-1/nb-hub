@@ -3,6 +3,7 @@ import type { ConfusionDto } from "./confusions.js";
 
 export type ChatSessionDto = {
   id: number;
+  userId: string | null;
   title: string;
   status: string;
   createdAt: IsoDateString;

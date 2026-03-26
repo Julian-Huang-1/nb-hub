@@ -17,6 +17,7 @@ export type PublishDocumentBody = {
 
 export type DocumentDto = {
   id: number;
+  userId: string | null;
   title: string;
   slug: string;
   status: string;

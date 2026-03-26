@@ -9,7 +9,9 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.5.6",
     "@nb-hub/contracts": "workspace:*",
+    "better-auth": "^1.5.6",
     "better-sqlite3": "^12.8.0",
     "cors": "^2.8.6",
     "drizzle-orm": "^0.45.1",

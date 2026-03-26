@@ -3,16 +3,17 @@ import { aiOrchestrator } from "../ai/ai-orchestrator.js";
 import { confusionsRepository } from "./confusions.repository.js";
 
 export const confusionsService = {
-  list(status?: unknown) {
+  list(userId: string, status?: unknown) {
     const normalized = typeof status === "string" && status.trim() ? status.trim() : undefined;
-    return confusionsRepository.listConfusions(normalized);
+    return confusionsRepository.listConfusions(userId, normalized);
   },
 
   markResolved(
+    userId: string,
     confusionId: number,
     body: ResolveConfusionBody | Record<string, unknown>,
   ) {
-    const confusion = confusionsRepository.findConfusionById(confusionId);
+    const confusion = confusionsRepository.findConfusionById(userId, confusionId);
     if (!confusion) throw new Error("confusion not found");
     if (typeof body.answer !== "string" || body.answer.trim().length === 0) {
       throw new Error("answer is required");
@@ -27,7 +28,7 @@ export const confusionsService = {
       typeof body.resolvedByMessageId === "number" ? body.resolvedByMessageId : undefined;
 
     const resolutionMd = aiOrchestrator.buildResolutionMarkdown({ question, answer });
-    const updatedConfusion = confusionsRepository.updateConfusionResolved(confusionId);
+    const updatedConfusion = confusionsRepository.updateConfusionResolved(userId, confusionId);
     const resolution = confusionsRepository.createResolution({
       confusionId,
       resolvedByMessageId,
@@ -41,8 +42,8 @@ export const confusionsService = {
     };
   },
 
-  getResolutions(confusionId: number) {
-    const confusion = confusionsRepository.findConfusionById(confusionId);
+  getResolutions(userId: string, confusionId: number) {
+    const confusion = confusionsRepository.findConfusionById(userId, confusionId);
     if (!confusion) throw new Error("confusion not found");
     return confusionsRepository.listResolutionsByConfusionId(confusionId);
   },

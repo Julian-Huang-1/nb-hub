@@ -31,12 +31,6 @@ const navAboutActive = computed(
           >
             文章
           </RouterLink>
-          <RouterLink class="nav__link" :to="{ name: 'docs' }">
-            文档
-          </RouterLink>
-          <RouterLink class="nav__link" :to="{ name: 'chat' }">
-            对话
-          </RouterLink>
           <RouterLink
             class="nav__link"
             :class="{ 'nav__link--active': navAboutActive }"

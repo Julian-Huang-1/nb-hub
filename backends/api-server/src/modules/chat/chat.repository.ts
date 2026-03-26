@@ -1,31 +1,40 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { chatMessages, chatSessions } from "../../db/schema.js";
 
 export const chatRepository = {
-  createSession: (title: string) => {
+  createSession: (userId: string, title: string) => {
     const now = new Date();
     const [session] = db
       .insert(chatSessions)
-      .values({ title, status: "active", createdAt: now, updatedAt: now })
+      .values({ userId, title, status: "active", createdAt: now, updatedAt: now })
       .returning()
       .all();
     return session;
   },
 
-  findSessionById: (sessionId: number) => {
-    return db.select().from(chatSessions).where(eq(chatSessions.id, sessionId)).get();
+  findSessionById: (userId: string, sessionId: number) => {
+    return db
+      .select()
+      .from(chatSessions)
+      .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
+      .get();
   },
 
-  listSessions: () => {
-    return db.select().from(chatSessions).orderBy(desc(chatSessions.id)).all();
+  listSessions: (userId: string) => {
+    return db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.userId, userId))
+      .orderBy(desc(chatSessions.id))
+      .all();
   },
 
-  updateSessionUpdatedAt: (sessionId: number) => {
+  updateSessionUpdatedAt: (userId: string, sessionId: number) => {
     const [session] = db
       .update(chatSessions)
       .set({ updatedAt: new Date() })
-      .where(eq(chatSessions.id, sessionId))
+      .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
       .returning()
       .all();
     return session;

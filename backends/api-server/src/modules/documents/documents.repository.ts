@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { documents, documentVersions } from "../../db/schema.js";
 
@@ -14,15 +14,21 @@ type SaveDraftInput = {
 };
 
 export const documentsRepository = {
-  listDocuments: () => {
-    return db.select().from(documents).orderBy(desc(documents.updatedAt)).all();
+  listDocuments: (userId: string) => {
+    return db
+      .select()
+      .from(documents)
+      .where(eq(documents.userId, userId))
+      .orderBy(desc(documents.updatedAt))
+      .all();
   },
 
-  createDocument: ({ title, slug }: CreateDocumentInput) => {
+  createDocument: ({ userId, title, slug }: CreateDocumentInput & { userId: string }) => {
     const now = new Date();
     const [document] = db
       .insert(documents)
       .values({
+        userId,
         title,
         slug,
         status: "draft",
@@ -48,21 +54,37 @@ export const documentsRepository = {
     return version;
   },
 
-  updateDocumentMeta: (documentId: number, values: Partial<typeof documents.$inferInsert>) => {
+  updateDocumentMeta: (
+    userId: string,
+    documentId: number,
+    values: Partial<typeof documents.$inferInsert>,
+  ) => {
     const [document] = db
       .update(documents)
       .set(values)
-      .where(eq(documents.id, documentId))
+      .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
       .returning()
       .all();
     return document;
   },
 
-  findDocumentById: (documentId: number) => {
-    return db.select().from(documents).where(eq(documents.id, documentId)).get();
+  findDocumentById: (userId: string, documentId: number) => {
+    return db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
+      .get();
   },
 
-  findDocumentBySlug: (slug: string) => {
+  findDocumentBySlug: (userId: string, slug: string) => {
+    return db
+      .select()
+      .from(documents)
+      .where(and(eq(documents.slug, slug), eq(documents.userId, userId)))
+      .get();
+  },
+
+  findDocumentBySlugGlobal: (slug: string) => {
     return db.select().from(documents).where(eq(documents.slug, slug)).get();
   },
 
@@ -82,10 +104,10 @@ export const documentsRepository = {
       .run();
   },
 
-  deleteDocument: (documentId: number) => {
+  deleteDocument: (userId: string, documentId: number) => {
     const [document] = db
       .delete(documents)
-      .where(eq(documents.id, documentId))
+      .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
       .returning()
       .all();
     return document;

@@ -10,13 +10,18 @@ const parseId = (value: string) => {
   if (!Number.isInteger(id) || id <= 0) throw new Error("invalid id");
   return id;
 };
+const requireUserId = (req: Request) => {
+  const userId = req.auth?.userId;
+  if (!userId) throw new Error("unauthorized");
+  return userId;
+};
 
 export const confusionsRouter = Router();
 
 confusionsRouter.get(
   "/",
   (req: Request<unknown, unknown, unknown, ListConfusionsQuery>, res: Response) => {
-    const data = confusionsService.list(req.query.status);
+    const data = confusionsService.list(requireUserId(req), req.query.status);
     res.status(200).json({ status: "ok", data });
   },
 );
@@ -25,7 +30,11 @@ confusionsRouter.post(
   "/:id/resolve",
   (req: Request<IdParams, unknown, ResolveConfusionBody>, res: Response) => {
     try {
-      const data = confusionsService.markResolved(parseId(req.params.id), req.body ?? {});
+      const data = confusionsService.markResolved(
+        requireUserId(req),
+        parseId(req.params.id),
+        req.body ?? {},
+      );
       res.status(200).json({ status: "ok", data });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -36,7 +45,7 @@ confusionsRouter.post(
 
 confusionsRouter.get("/:id/resolutions", (req: Request<IdParams>, res: Response) => {
   try {
-    const data = confusionsService.getResolutions(parseId(req.params.id));
+    const data = confusionsService.getResolutions(requireUserId(req), parseId(req.params.id));
     res.status(200).json({ status: "ok", data });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
