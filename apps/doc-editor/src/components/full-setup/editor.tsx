@@ -30,7 +30,7 @@ const EDITOR_STYLES = {
 };
 
 type FullSetupEditorProps = {
-  initialValue?: YooptaContentValue;
+  initialValue?: YooptaContentValue | null;
   containerBoxRef?: React.RefObject<HTMLDivElement>;
   onChange?: (value: YooptaContentValue) => void;
 };

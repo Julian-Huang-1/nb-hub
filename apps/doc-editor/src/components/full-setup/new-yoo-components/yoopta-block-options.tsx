@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { BlockOptions, useBlockActions } from '@yoopta/ui/block-options';
 import { YooptaActionMenuList } from './yoopta-action-menu-list';
+import { LOCKED_BLOCK_ID } from '@/pages/full-setup/locked-title-block';
 
 type YooptaBlockOptionsProps = {
   open?: boolean;
@@ -14,8 +15,10 @@ export const YooptaBlockOptions = ({ open, onOpenChange, blockId, anchor }: Yoop
   const turnIntoRef = useRef<HTMLButtonElement>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [actionMenuAnchor, setActionMenuAnchor] = useState<HTMLButtonElement | null>(null);
+  const isLockedTitleBlock = blockId === LOCKED_BLOCK_ID;
 
   const onTurnInto = () => {
+    if (isLockedTitleBlock) return;
     setActionMenuAnchor(turnIntoRef.current);
     setActionMenuOpen(true);
   };
@@ -40,7 +43,7 @@ export const YooptaBlockOptions = ({ open, onOpenChange, blockId, anchor }: Yoop
   };
 
   const onDelete = () => {
-    if (!blockId) return;
+    if (!blockId || isLockedTitleBlock) return;
     deleteBlock(blockId);
     onOpenChange?.(false);
   };
@@ -50,7 +53,12 @@ export const YooptaBlockOptions = ({ open, onOpenChange, blockId, anchor }: Yoop
       <BlockOptions open={open} onOpenChange={onOpenChange} anchor={anchor}>
         <BlockOptions.Content side="right" align="end">
           <BlockOptions.Group>
-            <BlockOptions.Item ref={turnIntoRef} onSelect={onTurnInto} keepOpen>
+            <BlockOptions.Item
+              ref={turnIntoRef}
+              onSelect={onTurnInto}
+              keepOpen
+              disabled={isLockedTitleBlock}
+            >
               Turn into
             </BlockOptions.Item>
           </BlockOptions.Group>
@@ -58,7 +66,11 @@ export const YooptaBlockOptions = ({ open, onOpenChange, blockId, anchor }: Yoop
           <BlockOptions.Group>
             <BlockOptions.Item onSelect={onDuplicate}>Duplicate</BlockOptions.Item>
             <BlockOptions.Item onSelect={onCopyLink}>Copy link to block</BlockOptions.Item>
-            <BlockOptions.Item variant="destructive" onSelect={onDelete}>
+            <BlockOptions.Item
+              variant="destructive"
+              onSelect={onDelete}
+              disabled={isLockedTitleBlock}
+            >
               Delete
             </BlockOptions.Item>
           </BlockOptions.Group>
