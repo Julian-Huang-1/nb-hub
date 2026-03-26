@@ -31,12 +31,14 @@ const EDITOR_STYLES = {
 
 type FullSetupEditorProps = {
   initialValue?: YooptaContentValue;
-  containerBoxRef?: React.RefObject<HTMLDivElement | null>;
+  containerBoxRef?: React.RefObject<HTMLDivElement>;
+  onChange?: (value: YooptaContentValue) => void;
 };
 
 const FullSetupEditor = ({
   initialValue,
   containerBoxRef: externalRef,
+  onChange,
 }: FullSetupEditorProps) => {
   const internalRef = useRef<HTMLDivElement>(null);
   const containerBoxRef = externalRef ?? internalRef;
@@ -87,6 +89,9 @@ const FullSetupEditor = ({
           style={EDITOR_STYLES}
           renderBlock={renderBlock}
           placeholder="Type / to open menu, or start typing..."
+          onChange={(value) => {
+            onChange?.(value);
+          }}
         >
           <YooptaToolbar />
           <YooptaFloatingBlockActions />
