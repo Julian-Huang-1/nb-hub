@@ -27,6 +27,10 @@ alwaysApply: true
 
 - Vue 3 + Vite + vue-router；API 类型与后端对齐时**只从 `@nb-hub/contracts` 引入**。
 
+## 前端（`apps/doc-editor`）
+
+- API 类型与后端对齐时**只从 `@nb-hub/contracts` 引入**。
+
 ## 协作方式
 
 - 改动围绕需求，避免无关重构；命名与目录风格与现有模块一致。
