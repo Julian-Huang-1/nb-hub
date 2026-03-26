@@ -15,10 +15,7 @@ import {
   SiderItemButton,
 } from "@/components/sider";
 import { cn } from "@/lib/utils";
-import {
-  useFullSetupStore,
-  defaultEditorValue,
-} from "@/stores/full-setup-store";
+import { useFullSetupStore } from "@/stores/full-setup-store";
 
 export default function FullSetupPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,6 +32,7 @@ export default function FullSetupPage() {
     createDocument,
     saveDraft,
     publishDocument,
+    deleteDocument,
     openFromHistory,
   } = useFullSetupStore();
 
@@ -100,6 +98,13 @@ export default function FullSetupPage() {
               onClick={publishDocument}
             >
               {loading === "publish" ? "发布中..." : "发布文档"}
+            </TopMenuBarButton>
+            <TopMenuBarButton
+              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+              disabled={loading !== null || documentId === null}
+              onClick={deleteDocument}
+            >
+              {loading === "delete" ? "删除中..." : "删除文档"}
             </TopMenuBarButton>
           </TopMenuBarSection>
         </TopMenuBarInner>

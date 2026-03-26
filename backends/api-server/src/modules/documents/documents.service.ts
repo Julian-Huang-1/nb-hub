@@ -153,4 +153,18 @@ export const documentsService = {
     }
     return documentsRepository.listDocumentVersions(documentId);
   },
+
+  deleteDocument(documentId: number) {
+    const existing = documentsRepository.findDocumentById(documentId);
+    if (!existing) {
+      throw new Error("document not found");
+    }
+
+    documentsRepository.deleteDocumentVersions(documentId);
+    const deleted = documentsRepository.deleteDocument(documentId);
+    if (!deleted) {
+      throw new Error("document not found");
+    }
+    return { document: deleted };
+  },
 };

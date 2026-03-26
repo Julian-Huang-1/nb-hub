@@ -4,14 +4,13 @@ import type { YooptaContentValue } from "@yoopta/editor";
 import { documentsApi } from "@/api/documents";
 import { fullSetupInitialValue } from "@/pages/full-setup/initial-value";
 import { ensureLockedTitleBlock } from "@/pages/full-setup/locked-title-block";
-import { cloneDeep } from "lodash";
 
 type HistoryDocumentItem = Pick<
   DocumentDto,
   "id" | "title" | "status" | "updatedAt"
 >;
 
-type LoadingState = "create" | "save" | "publish" | "load" | null;
+type LoadingState = "create" | "save" | "publish" | "load" | "delete" | null;
 
 type FullSetupStore = {
   // 当前文档标题（用于保存/发布时提交）
@@ -44,6 +43,8 @@ type FullSetupStore = {
   publishDocument: () => Promise<void>;
   // 从历史列表打开指定文档
   openFromHistory: (id: number) => Promise<void>;
+  // 删除当前文档
+  deleteDocument: () => Promise<void>;
 };
 
 export const defaultEditorValue = ensureLockedTitleBlock(fullSetupInitialValue);
@@ -72,6 +73,10 @@ const toHistoryItem = (doc: DocumentDto): HistoryDocumentItem => ({
   status: doc.status,
   updatedAt: doc.updatedAt,
 });
+
+const cloneEditorValue = (value: YooptaContentValue): YooptaContentValue => {
+  return structuredClone(value) as YooptaContentValue;
+};
 
 export const useFullSetupStore = create<FullSetupStore>((set, get) => ({
   title: "Untitled document",
@@ -107,8 +112,9 @@ export const useFullSetupStore = create<FullSetupStore>((set, get) => ({
     const newEditorValue = ensureLockedTitleBlock(value);
     set({ editorValue: newEditorValue });
 
-    const newTitle = newEditorValue["title-block"].value[0].children[0]
-      .text as string;
+    const newTitle =
+      (newEditorValue["title-block"] as any)?.value?.[0]?.children?.[0]?.text ??
+      "未命名文档";
 
     if (get().title !== newTitle) {
       set({
@@ -144,7 +150,7 @@ export const useFullSetupStore = create<FullSetupStore>((set, get) => ({
         documentId: doc.id,
         historyDocuments: docs.map(toHistoryItem),
         message: `创建成功，文档 ID: ${doc.id}`,
-        editorValue: cloneDeep(defaultEditorValue),
+        editorValue: cloneEditorValue(defaultEditorValue),
       });
     } catch (error) {
       set({ message: error instanceof Error ? error.message : "创建失败" });
@@ -228,6 +234,34 @@ export const useFullSetupStore = create<FullSetupStore>((set, get) => ({
       }));
     } catch (error) {
       set({ message: error instanceof Error ? error.message : "加载失败" });
+    } finally {
+      set({ loading: null });
+    }
+  },
+
+  deleteDocument: async () => {
+    const { documentId, loading } = get();
+    if (!documentId || loading) {
+      return;
+    }
+
+    set({ loading: "delete", message: "" });
+
+    try {
+      await documentsApi.deleteById(documentId);
+      const docs = await documentsApi.list();
+
+      set((state) => ({
+        documentId: null,
+        title: "Untitled document",
+        editorValue: cloneEditorValue(defaultEditorValue),
+        editorInitialValue: cloneEditorValue(defaultEditorValue),
+        editorSeed: state.editorSeed + 1,
+        historyDocuments: docs.map(toHistoryItem),
+        message: `已删除文档 #${documentId}`,
+      }));
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : "删除失败" });
     } finally {
       set({ loading: null });
     }

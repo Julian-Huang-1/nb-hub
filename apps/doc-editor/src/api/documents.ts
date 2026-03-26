@@ -1,6 +1,7 @@
 import type {
   CreateDocumentBody,
   CreateDocumentResponseData,
+  DeleteDocumentResponseData,
   GetDocumentResponseData,
   ListDocumentsResponseData,
   PublishDocumentBody,
@@ -37,5 +38,11 @@ export const documentsApi = {
 
   getById(id: number) {
     return apiOkData<GetDocumentResponseData>(`/documents/${id}`);
+  },
+
+  deleteById(id: number) {
+    return apiOkData<DeleteDocumentResponseData>(`/documents/${id}`, {
+      method: "DELETE",
+    });
   },
 };

@@ -47,6 +47,11 @@ export type SaveOrPublishDocumentResponseData = {
   version: DocumentVersionDto;
 };
 
+/** `DELETE /documents/:id` */
+export type DeleteDocumentResponseData = {
+  document: DocumentDto;
+};
+
 /** `GET /documents/:id` */
 export type GetDocumentResponseData = {
   document: DocumentDto;

@@ -101,3 +101,15 @@ documentsRouter.get(
     }
   },
 );
+
+documentsRouter.delete("/:id", (req: Request<IdParams>, res: Response) => {
+  try {
+    const documentId = parseDocumentId(req.params.id);
+    const data = documentsService.deleteDocument(documentId);
+    res.status(200).json({ status: "ok", data });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const statusCode = message === "document not found" ? 404 : 400;
+    res.status(statusCode).json({ status: "error", message });
+  }
+});

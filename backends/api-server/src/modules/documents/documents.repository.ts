@@ -74,4 +74,20 @@ export const documentsRepository = {
       .orderBy(desc(documentVersions.id))
       .all();
   },
+
+  deleteDocumentVersions: (documentId: number) => {
+    return db
+      .delete(documentVersions)
+      .where(eq(documentVersions.documentId, documentId))
+      .run();
+  },
+
+  deleteDocument: (documentId: number) => {
+    const [document] = db
+      .delete(documents)
+      .where(eq(documents.id, documentId))
+      .returning()
+      .all();
+    return document;
+  },
 };
