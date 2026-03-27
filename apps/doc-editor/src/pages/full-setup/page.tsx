@@ -56,7 +56,15 @@ const preloadYooptaModules = async () => {
   ]);
 };
 
-export default function FullSetupPage() {
+type FullSetupPageProps = {
+  userEmail: string | null | undefined;
+  onSignOut: () => Promise<void>;
+};
+
+export default function FullSetupPage({
+  userEmail,
+  onSignOut,
+}: FullSetupPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isSiderCollapsed, setIsSiderCollapsed] = useState(false);
   const {
@@ -123,6 +131,9 @@ export default function FullSetupPage() {
             </TopMenuBarButton>
           </TopMenuBarSection>
           <TopMenuBarSection className="ml-auto">
+            <span className="max-w-[220px] truncate text-xs text-gray-700">
+              {userEmail ?? "未绑定邮箱"}
+            </span>
             <TopMenuBarButton
               disabled={loading !== null}
               onClick={createDocument}
@@ -148,6 +159,9 @@ export default function FullSetupPage() {
               onClick={deleteDocument}
             >
               {loading === "delete" ? "删除中..." : "删除文档"}
+            </TopMenuBarButton>
+            <TopMenuBarButton onClick={() => void onSignOut()}>
+              退出登录
             </TopMenuBarButton>
           </TopMenuBarSection>
         </TopMenuBarInner>
