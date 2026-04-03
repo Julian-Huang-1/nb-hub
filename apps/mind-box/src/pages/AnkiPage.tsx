@@ -7,6 +7,7 @@ import {
   reviewAnkiNote,
 } from "../api/anki";
 import { ApiHttpError } from "../api/http";
+import { AuthLoginModal } from "../components/AuthLoginModal";
 
 function parseTags(tagsJson: string): string[] {
   try {
@@ -25,6 +26,7 @@ function shuffleInPlace<T>(arr: T[]) {
 }
 
 export default function AnkiPage() {
+  const [loginOpen, setLoginOpen] = useState(false);
   const [authHint, setAuthHint] = useState<string | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importBusy, setImportBusy] = useState(false);
@@ -39,9 +41,8 @@ export default function AnkiPage() {
 
   const handleApiError = useCallback((err: unknown) => {
     if (err instanceof ApiHttpError && err.status === 401) {
-      setAuthHint(
-        "当前接口需要登录。请先在已接入 Better Auth 的应用中登录（会话 Cookie 需与 API 同站或已配置跨域携带凭证），再刷新本页。",
-      );
+      setLoginOpen(true);
+      setAuthHint(null);
       return true;
     }
     return false;
@@ -94,6 +95,19 @@ export default function AnkiPage() {
       setStudyBusy(false);
     }
   }, [deckFilter, handleApiError]);
+
+  const onLoginSuccess = useCallback(async () => {
+    setLoginOpen(false);
+    setAuthHint(null);
+    await refreshDecks();
+    await refreshNotes();
+    await loadStudyQueue();
+  }, [refreshDecks, refreshNotes, loadStudyQueue]);
+
+  const onLoginClose = useCallback(() => {
+    setLoginOpen(false);
+    setAuthHint("使用 Anki 相关功能需要先登录 api-server 账号。");
+  }, []);
 
   useEffect(() => {
     void refreshDecks();
@@ -157,7 +171,16 @@ export default function AnkiPage() {
         <code>#deck:牌组名</code> 行切换牌组。
       </p>
 
-      {authHint ? <p className="anki__alert">{authHint}</p> : null}
+      {authHint ? (
+        <div className="anki__alert anki__alert-row">
+          <p className="anki__alert-text">{authHint}</p>
+          <button type="button" className="anki__btn anki__btn--small" onClick={() => setLoginOpen(true)}>
+            登录
+          </button>
+        </div>
+      ) : null}
+
+      <AuthLoginModal open={loginOpen} onClose={onLoginClose} onSuccess={onLoginSuccess} />
 
       <section className="anki__section" aria-labelledby="anki-import-heading">
         <h2 id="anki-import-heading">导入</h2>
