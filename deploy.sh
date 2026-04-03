@@ -35,6 +35,9 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s << 'REMOTE_SCRIPT'
   git fetch origin main
   git reset --hard origin/main
 
+  echo "=== Removing node_modules (clean install) ==="
+  find . -name node_modules -type d -prune -exec rm -rf {} +
+
   echo "=== Installing dependencies ==="
   pnpm install 
 
