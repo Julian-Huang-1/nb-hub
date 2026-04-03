@@ -35,14 +35,8 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s << 'REMOTE_SCRIPT'
   git fetch origin main
   git reset --hard origin/main
 
-  echo "=== Removing node_modules (clean install) ==="
-  find . -name node_modules -type d -prune -exec rm -rf {} +
-
-  echo "=== Installing dependencies ==="
-  pnpm install 
-
   echo "=== Building all packages ==="
-  pnpm -r --workspace-concurrency=1 build
+  pnpm run ci:full
 
 echo "=== Reloading backend services ==="
 echo "=== Reloading services via ecosystem ==="
