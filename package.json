@@ -4,6 +4,7 @@
   "scripts": {
     "clean:node_modules": "find . -name node_modules -type d -prune -exec rm -rf {} +",
     "build:all": "pnpm -r --workspace-concurrency=1 build",
-    "ci:full": "pnpm run clean:node_modules && pnpm install && pnpm run build:all"
+    "ci:full": "pnpm run clean:node_modules && pnpm install && pnpm run build:all",
+    "create-monorepo": "node packages/create-monorepo/dist/cli.js"
   }
 }

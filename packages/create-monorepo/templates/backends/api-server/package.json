@@ -1,0 +1,22 @@
+{
+  "name": "{{SCOPE_API}}",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm run build && node dist/index.cjs",
+    "build": "tsup"
+  },
+  "dependencies": {
+    "{{SCOPE_CONTRACTS}}": "workspace:*",
+    "cors": "^2.8.6",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.14",
+    "tsup": "^8.5.0",
+    "typescript": "~5.9.3"
+  }
+}
