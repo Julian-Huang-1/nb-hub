@@ -20,6 +20,12 @@ export const router = createBrowserRouter(
           }),
         },
         {
+          path: "anki",
+          lazy: async () => ({
+            Component: (await import("./pages/AnkiPage")).default,
+          }),
+        },
+        {
           path: "*",
           lazy: async () => ({
             Component: (await import("./pages/NotFoundPage")).default,

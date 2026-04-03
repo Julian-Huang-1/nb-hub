@@ -9,6 +9,7 @@ export default function BlogLayout() {
     location.pathname.startsWith("/posts/");
   const navAboutActive =
     location.pathname === "/" && location.hash === "#about";
+  const navAnkiActive = location.pathname === "/anki";
 
   return (
     <div className="blog">
@@ -35,6 +36,14 @@ export default function BlogLayout() {
               to="/#about"
             >
               关于
+            </Link>
+            <Link
+              className={
+                navAnkiActive ? "nav__link nav__link--active" : "nav__link"
+              }
+              to="/anki"
+            >
+              记忆卡
             </Link>
           </nav>
         </div>

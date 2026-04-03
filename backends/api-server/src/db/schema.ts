@@ -98,6 +98,24 @@ export const solutionDocs = sqliteTable("solution_docs", {
     .$defaultFn(() => new Date()),
 });
 
+/** Anki-style note: tab-separated import (front / back / optional tags). */
+export const ankiNotes = sqliteTable("anki_notes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: text("user_id").notNull(),
+  deckName: text("deck_name").notNull().default("Default"),
+  front: text("front").notNull(),
+  back: text("back").notNull(),
+  tagsJson: text("tags_json").notNull().default("[]"),
+  /** SM-2 ease × 1000 (e.g. 2500 = 2.5). */
+  ease: integer("ease").notNull().default(2500),
+  intervalDays: integer("interval_days").notNull().default(0),
+  reps: integer("reps").notNull().default(0),
+  dueAt: integer("due_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

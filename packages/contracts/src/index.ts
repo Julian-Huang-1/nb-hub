@@ -1,4 +1,5 @@
 export * from "./common.js";
+export * from "./anki.js";
 export * from "./documents.js";
 export * from "./chat.js";
 export * from "./confusions.js";
