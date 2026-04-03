@@ -1,6 +1,22 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { getApiBase } from "../env";
 import { authClient } from "../lib/auth-client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 
 type AuthMode = "sign-in" | "sign-up";
 
@@ -27,19 +43,6 @@ export function AuthLoginModal({ open, onClose, onSuccess }: AuthLoginModalProps
       setMode("sign-in");
     }
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) {
-    return null;
-  }
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -79,83 +82,96 @@ export function AuthLoginModal({ open, onClose, onSuccess }: AuthLoginModalProps
   };
 
   return (
-    <div className="auth-modal" role="presentation">
-      <div className="auth-modal__backdrop" aria-hidden="true" onClick={onClose} />
-      <div
-        className="auth-modal__panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="auth-modal-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="auth-modal__head">
-          <h2 id="auth-modal-title" className="auth-modal__title">
-            {mode === "sign-in" ? "登录" : "注册"}
-          </h2>
-          <button type="button" className="auth-modal__close" onClick={onClose} aria-label="关闭">
-            ×
-          </button>
-        </div>
-        <p className="auth-modal__lead">
-          使用与 api-server 相同的账号登录后，即可使用 Anki 等需鉴权的接口（Cookie 将写入当前站点可访问的域）。
-        </p>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-md" showCloseButton>
+        <DialogHeader>
+          <DialogTitle>{mode === "sign-in" ? "登录" : "注册"}</DialogTitle>
+          <DialogDescription>
+            使用与 api-server 相同的账号登录后，即可使用 Anki 等需鉴权的接口（Cookie
+            将写入当前站点可访问的域）。
+          </DialogDescription>
+        </DialogHeader>
 
-        <form className="auth-modal__form" onSubmit={submit}>
-          {mode === "sign-up" ? (
-            <label className="auth-modal__field">
-              <span className="auth-modal__label">昵称</span>
-              <input
-                className="auth-modal__input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+        <form className="flex flex-col gap-4" onSubmit={submit}>
+          <FieldGroup>
+            {mode === "sign-up" ? (
+              <Field>
+                <FieldLabel htmlFor="auth-name">昵称</FieldLabel>
+                <Input
+                  id="auth-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+              </Field>
+            ) : null}
+            <Field>
+              <FieldLabel htmlFor="auth-email">邮箱</FieldLabel>
+              <Input
+                id="auth-email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                autoComplete="email"
                 required
               />
-            </label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="auth-password">密码</FieldLabel>
+              <Input
+                id="auth-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                autoComplete={
+                  mode === "sign-in" ? "current-password" : "new-password"
+                }
+                required
+              />
+            </Field>
+          </FieldGroup>
+
+          {message ? (
+            <Alert variant="destructive">
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
           ) : null}
-          <label className="auth-modal__field">
-            <span className="auth-modal__label">邮箱</span>
-            <input
-              className="auth-modal__input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </label>
-          <label className="auth-modal__field">
-            <span className="auth-modal__label">密码</span>
-            <input
-              className="auth-modal__input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-              required
-            />
-          </label>
 
-          {message ? <p className="auth-modal__error">{message}</p> : null}
-
-          <button className="auth-modal__submit" disabled={loading} type="submit">
-            {loading ? "提交中…" : mode === "sign-in" ? "登录" : "注册并登录"}
-          </button>
+          <Button disabled={loading} type="submit">
+            {loading ? (
+              <>
+                <Spinner data-icon="inline-start" />
+                提交中…
+              </>
+            ) : mode === "sign-in" ? (
+              "登录"
+            ) : (
+              "注册并登录"
+            )}
+          </Button>
         </form>
 
-        <p className="auth-modal__switch">
+        <p className="text-center text-sm text-muted-foreground">
           {mode === "sign-in" ? "还没有账号？" : "已有账号？"}
-          <button
+          <Button
             type="button"
-            className="auth-modal__switch-btn"
+            variant="link"
+            className="h-auto px-1 py-0"
             onClick={() => {
               setMode(mode === "sign-in" ? "sign-up" : "sign-in");
               setMessage("");
             }}
           >
             {mode === "sign-in" ? "去注册" : "去登录"}
-          </button>
+          </Button>
         </p>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

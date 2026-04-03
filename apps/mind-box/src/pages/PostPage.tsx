@@ -1,6 +1,9 @@
 import { Link, useNavigate, useParams } from "react-router";
 import { getPostBySlug } from "../data/posts";
 import { formatDate } from "../utils/format";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export default function PostPage() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -17,58 +20,66 @@ export default function PostPage() {
 
   if (!post) {
     return (
-      <main className="main post-view post-view--empty">
-        <p className="post-missing">找不到这篇文章。</p>
-        <Link className="post-article__more" to="/#posts">
-          返回首页
-        </Link>
+      <main className="flex flex-1 flex-col gap-4 py-8">
+        <p className="text-muted-foreground">找不到这篇文章。</p>
+        <Button variant="link" className="h-auto w-fit p-0" asChild>
+          <Link to="/#posts">返回首页</Link>
+        </Button>
       </main>
     );
   }
 
   return (
-    <main className="main post-view">
-      <nav className="post-nav" aria-label="文章导航">
-        <button type="button" className="post-back" onClick={goBack}>
+    <main className="flex flex-1 flex-col py-8">
+      <nav
+        className="mb-6 flex flex-wrap items-center justify-between gap-4"
+        aria-label="文章导航"
+      >
+        <Button variant="ghost" size="sm" type="button" onClick={goBack}>
           ← 返回
-        </button>
-        <Link className="post-nav__home" to="/#posts">
-          全部文章
-        </Link>
+        </Button>
+        <Button variant="ghost" size="sm" className="h-auto" asChild>
+          <Link to="/#posts">全部文章</Link>
+        </Button>
       </nav>
 
       <article
-        className="post-article"
+        className="flex flex-col gap-6"
         aria-labelledby={`post-title-${post.slug}`}
       >
-        <header className="post-article__header">
-          <time className="post-article__date" dateTime={post.date}>
+        <header className="flex flex-col gap-3 border-b border-border pb-5">
+          <time className="text-sm text-muted-foreground" dateTime={post.date}>
             {formatDate(post.date)}
           </time>
-          <h1 id={`post-title-${post.slug}`} className="post-article__title">
+          <h1
+            id={`post-title-${post.slug}`}
+            className="text-2xl font-semibold tracking-tight text-foreground"
+          >
             {post.title}
           </h1>
-          <ul className="post-article__tags" aria-label="标签">
+          <ul className="flex flex-wrap gap-1.5" aria-label="标签">
             {post.tags.map((tag) => (
-              <li key={tag} className="post-card__tag">
-                {tag}
+              <li key={tag}>
+                <Badge variant="outline">{tag}</Badge>
               </li>
             ))}
           </ul>
         </header>
-        <div className="post-article__body">
+        <div className="flex flex-col gap-4">
           {post.body.map((para, i) => (
-            <p key={i} className="post-article__para">
+            <p key={i} className="leading-relaxed text-muted-foreground">
               {para}
             </p>
           ))}
         </div>
       </article>
 
-      <footer className="post-article__footer">
-        <Link className="post-article__more" to="/#posts">
-          ← 回到首页
-        </Link>
+      <Separator className="my-8" />
+
+      <footer>
+        <Button variant="link" className="h-auto w-fit p-0" asChild>
+          <Link to="/#posts">← 回到首页</Link>
+        </Button>
       </footer>
     </main>
   );
