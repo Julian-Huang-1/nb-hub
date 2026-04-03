@@ -13,6 +13,7 @@ import { confusionsRouter } from "./modules/confusions/confusions.routes.js";
 import { assistRouter } from "./modules/assist/assist.routes.js";
 import { documentsRouter } from "./modules/documents/documents.routes.js";
 import { ankiRouter } from "./modules/anki/anki.routes.js";
+import { todosRouter } from "./modules/todos/todos.routes.js";
 import { auth } from "./modules/auth/auth.js";
 import { requireSession } from "./modules/auth/auth.middleware.js";
 
@@ -79,6 +80,7 @@ app.use("/documents", requireSession, documentsRouter);
 app.use("/chat", requireSession, chatRouter);
 app.use("/confusions", requireSession, confusionsRouter);
 app.use("/anki", requireSession, ankiRouter);
+app.use("/todos", requireSession, todosRouter);
 app.use("/analytics", analyticsRouter);
 app.use("/assist", assistRouter);
 

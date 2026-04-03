@@ -11,6 +11,7 @@ export default function BlogLayout() {
   const navAboutActive =
     location.pathname === "/" && location.hash === "#about";
   const navAnkiActive = location.pathname === "/anki";
+  const navTodoActive = location.pathname === "/todolist";
 
   return (
     <div className="mx-auto flex min-h-svh max-w-3xl flex-col px-5 pb-12">
@@ -48,6 +49,13 @@ export default function BlogLayout() {
             asChild
           >
             <Link to="/anki">记忆卡</Link>
+          </Button>
+          <Button
+            variant={navTodoActive ? "secondary" : "ghost"}
+            size="sm"
+            asChild
+          >
+            <Link to="/todolist">待办</Link>
           </Button>
         </nav>
       </header>
