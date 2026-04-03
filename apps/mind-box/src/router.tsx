@@ -26,6 +26,12 @@ export const router = createBrowserRouter(
           }),
         },
         {
+          path: "todolist",
+          lazy: async () => ({
+            Component: (await import("./pages/TodoListPage")).default,
+          }),
+        },
+        {
           path: "*",
           lazy: async () => ({
             Component: (await import("./pages/NotFoundPage")).default,
