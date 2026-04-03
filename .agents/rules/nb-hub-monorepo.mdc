@@ -25,7 +25,7 @@ alwaysApply: true
 
 ## 前端（`apps/mind-box`）
 
-- Vue 3 + Vite + vue-router；API 类型与后端对齐时**只从 `@nb-hub/contracts` 引入**。
+- React 19 + Vite + React Router 7；API 类型与后端对齐时**只从 `@nb-hub/contracts` 引入**。
 
 ## 前端（`apps/doc-editor`）
 

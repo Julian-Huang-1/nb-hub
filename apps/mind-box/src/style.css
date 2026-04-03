@@ -76,7 +76,7 @@ code {
   color: var(--text-h);
 }
 
-#app {
+#root {
   min-height: 100svh;
 }
 
