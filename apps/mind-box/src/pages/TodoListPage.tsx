@@ -108,15 +108,10 @@ export default function TodoListPage() {
   };
 
   return (
-    <main className="flex w-full flex-1 flex-col gap-8 py-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          待办
-        </h1>
-        <p className="mt-2 leading-relaxed text-muted-foreground">
-          与账号同步的简易待办；未登录时会提示通过弹窗登录。
-        </p>
-      </div>
+    <main className="flex w-full flex-1 flex-col gap-8 pb-8">
+      <p className="leading-relaxed text-muted-foreground">
+        与账号同步的简易待办；未登录时会提示通过弹窗登录。
+      </p>
 
       {authHint ? (
         <Alert>

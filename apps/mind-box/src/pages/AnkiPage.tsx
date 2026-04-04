@@ -189,20 +189,15 @@ export default function AnkiPage() {
   };
 
   return (
-    <main className="flex w-full flex-1 flex-col gap-8 py-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Anki 记忆卡
-        </h1>
-        <p className="mt-2 leading-relaxed text-muted-foreground">
-          上传 Anki 导出的 <code className="rounded-md bg-muted px-1.5 py-0.5 text-sm">.txt</code>
-          （制表符分隔：正面、背面，可选最后一列为标签）。支持文件中的{" "}
-          <code className="rounded-md bg-muted px-1.5 py-0.5 text-sm">
-            #deck:牌组名
-          </code>{" "}
-          行切换牌组。
-        </p>
-      </div>
+    <main className="flex w-full flex-1 flex-col gap-8 pb-8">
+      <p className="leading-relaxed text-muted-foreground">
+        上传 Anki 导出的 <code className="rounded-md bg-muted px-1.5 py-0.5 text-sm">.txt</code>
+        （制表符分隔：正面、背面，可选最后一列为标签）。支持文件中的{" "}
+        <code className="rounded-md bg-muted px-1.5 py-0.5 text-sm">
+          #deck:牌组名
+        </code>{" "}
+        行切换牌组。
+      </p>
 
       {authHint ? (
         <Alert>

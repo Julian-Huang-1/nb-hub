@@ -10,8 +10,8 @@ export default function BlogLayout() {
     location.pathname.startsWith("/posts/");
   const navAboutActive =
     location.pathname === "/" && location.hash === "#about";
-  const navAnkiActive = location.pathname === "/anki";
-  const navTodoActive = location.pathname === "/todolist";
+  const navAnkiActive = location.pathname.startsWith("/anki");
+  const navTodoActive = location.pathname.startsWith("/todolist");
 
   return (
     <div className="mx-auto flex min-h-svh max-w-3xl flex-col px-5 pb-12">

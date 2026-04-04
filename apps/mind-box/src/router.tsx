@@ -1,5 +1,7 @@
 import { createBrowserRouter } from "react-router";
+import AnkiLayout from "./layouts/AnkiLayout";
 import BlogLayout from "./layouts/BlogLayout";
+import TodoListLayout from "./layouts/TodoListLayout";
 
 export const router = createBrowserRouter(
   [
@@ -20,21 +22,33 @@ export const router = createBrowserRouter(
           }),
         },
         {
-          path: "anki",
+          path: "*",
+          lazy: async () => ({
+            Component: (await import("./pages/NotFoundPage")).default,
+          }),
+        },
+      ],
+    },
+    {
+      path: "anki",
+      Component: AnkiLayout,
+      children: [
+        {
+          index: true,
           lazy: async () => ({
             Component: (await import("./pages/AnkiPage")).default,
           }),
         },
+      ],
+    },
+    {
+      path: "todolist",
+      Component: TodoListLayout,
+      children: [
         {
-          path: "todolist",
+          index: true,
           lazy: async () => ({
             Component: (await import("./pages/TodoListPage")).default,
-          }),
-        },
-        {
-          path: "*",
-          lazy: async () => ({
-            Component: (await import("./pages/NotFoundPage")).default,
           }),
         },
       ],
