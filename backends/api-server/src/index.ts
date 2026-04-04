@@ -17,6 +17,10 @@ import { todosRouter } from "./modules/todos/todos.routes.js";
 import { auth } from "./modules/auth/auth.js";
 import { requireSession } from "./modules/auth/auth.middleware.js";
 
+// 初始化 Agent 模块（自动注册通用工具）
+import "./modules/agent/index.js";
+import { todosAgentRouter } from "./modules/todos/todos.agent.routes.js";
+
 const app = express();
 const port = Number(process.env.PORT ?? 9999);
 
@@ -81,6 +85,7 @@ app.use("/chat", requireSession, chatRouter);
 app.use("/confusions", requireSession, confusionsRouter);
 app.use("/anki", requireSession, ankiRouter);
 app.use("/todos", requireSession, todosRouter);
+app.use("/todos", requireSession, todosAgentRouter);
 app.use("/analytics", analyticsRouter);
 app.use("/assist", assistRouter);
 
