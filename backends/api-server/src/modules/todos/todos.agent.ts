@@ -21,140 +21,151 @@ import { todosService } from "./todos.service.js";
 import type { TodoDto } from "@nb-hub/contracts";
 
 /**
- * 待办事项相关的工具定义
+ * 创建 Todos 相关的工具列表
+ * 使用工厂函数模式，直接注入 userId，避免重复定义
  */
-const listTodosTool: AgentTool = {
-  name: "list_todos",
-  label: "列出待办事项",
-  description: "获取当前用户的所有待办事项列表",
-  parameters: Type.Object({
-    includeCompleted: Type.Optional(
-      Type.Boolean({
-        description: "是否包含已完成的待办事项",
-        default: false,
+function createTodosTools(userId: string): AgentTool[] {
+  return [
+    {
+      name: "list_todos",
+      label: "列出待办事项",
+      description: "获取当前用户的所有待办事项列表",
+      parameters: Type.Object({
+        includeCompleted: Type.Optional(
+          Type.Boolean({
+            description: "是否包含已完成的待办事项",
+            default: false,
+          }),
+        ),
       }),
-    ),
-  }),
-  execute: async (
-    _toolCallId,
-    params,
-    _signal,
-    onUpdate,
-  ): Promise<AgentToolResult<{ todos: TodoDto[]; count: number }>> => {
-    // 注意：实际执行时需要 userId，这里通过 context 传递
-    // 这个工具需要在 agent 创建时注入 userId
-    onUpdate?.({
-      content: [{ type: "text", text: "正在查询待办事项..." }],
-      details: {},
-    });
+      execute: async (toolCallId, params, signal, onUpdate) => {
+        const todos = todosService.list(userId);
+        const filtered = params.includeCompleted
+          ? todos
+          : todos.filter((t) => !t.completed);
 
-    // 返回占位数据，实际使用时需要通过 closure 注入 userId
-    return {
-      content: [{ type: "text", text: "待办事项列表已获取" }],
-      details: { todos: [], count: 0 },
-    };
-  },
-};
+        onUpdate?.({
+          content: [{ type: "text", text: `找到 ${filtered.length} 个待办事项` }],
+          details: {},
+        });
 
-const createTodoTool: AgentTool = {
-  name: "create_todo",
-  label: "创建待办事项",
-  description: "创建一个新的待办事项",
-  parameters: Type.Object({
-    title: Type.String({
-      description: "待办事项标题",
-      minLength: 1,
-    }),
-  }),
-  execute: async (
-    _toolCallId,
-    params,
-  ): Promise<AgentToolResult<{ id: number; title: string }>> => {
-    // 实际使用时需要注入 userId
-    return {
-      content: [
-        {
-          type: "text",
-          text: `待办事项 "${params.title}" 创建成功`,
-        },
-      ],
-      details: { id: 0, title: params.title },
-    };
-  },
-};
+        const todoList = filtered
+          .map((t) => `[${t.completed ? "x" : " "}] ${t.id}: ${t.title}`)
+          .join("\n");
 
-const updateTodoTool: AgentTool = {
-  name: "update_todo",
-  label: "更新待办事项",
-  description: "更新待办事项的标题或完成状态",
-  parameters: Type.Object({
-    id: Type.Number({ description: "待办事项ID" }),
-    title: Type.Optional(Type.String({ description: "新标题" })),
-    completed: Type.Optional(Type.Boolean({ description: "完成状态" })),
-  }),
-  execute: async (
-    _toolCallId,
-    params,
-  ): Promise<AgentToolResult<{ id: number; updated: boolean }>> => {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `待办事项 ${params.id} 更新成功`,
-        },
-      ],
-      details: { id: params.id, updated: true },
-    };
-  },
-};
+        return {
+          content: [{ type: "text", text: todoList || "暂无待办事项" }],
+          details: { todos: filtered, count: filtered.length },
+        };
+      },
+    },
 
-const deleteTodoTool: AgentTool = {
-  name: "delete_todo",
-  label: "删除待办事项",
-  description: "删除指定的待办事项",
-  parameters: Type.Object({
-    id: Type.Number({ description: "待办事项ID" }),
-  }),
-  execute: async (
-    _toolCallId,
-    params,
-  ): Promise<AgentToolResult<{ id: number; deleted: boolean }>> => {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `待办事项 ${params.id} 已删除`,
-        },
-      ],
-      details: { id: params.id, deleted: true },
-    };
-  },
-};
+    {
+      name: "create_todo",
+      label: "创建待办事项",
+      description: "创建一个新的待办事项",
+      parameters: Type.Object({
+        title: Type.String({
+          description: "待办事项标题",
+          minLength: 1,
+        }),
+      }),
+      execute: async (toolCallId, params) => {
+        const todo = todosService.create(userId, params.title);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✓ 已创建: "${todo.title}" (ID: ${todo.id})`,
+            },
+          ],
+          details: { id: todo.id, title: todo.title },
+        };
+      },
+    },
 
-const batchCompleteTool: AgentTool = {
-  name: "batch_complete_todos",
-  label: "批量完成待办事项",
-  description: "批量将多个待办事项标记为完成",
-  parameters: Type.Object({
-    ids: Type.Array(Type.Number(), {
-      description: "要完成的待办事项ID列表",
-    }),
-  }),
-  execute: async (
-    _toolCallId,
-    params,
-  ): Promise<AgentToolResult<{ completed: number[]; failed: number[] }>> => {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `已完成 ${params.ids.length} 个待办事项`,
-        },
-      ],
-      details: { completed: params.ids, failed: [] },
-    };
-  },
-};
+    {
+      name: "update_todo",
+      label: "更新待办事项",
+      description: "更新待办事项的标题或完成状态",
+      parameters: Type.Object({
+        id: Type.Number({ description: "待办事项ID" }),
+        title: Type.Optional(Type.String({ description: "新标题" })),
+        completed: Type.Optional(Type.Boolean({ description: "完成状态" })),
+      }),
+      execute: async (toolCallId, params) => {
+        const todo = todosService.update(userId, params.id, {
+          title: params.title,
+          completed: params.completed,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✓ 已更新: "${todo.title}" (ID: ${todo.id}, 完成: ${todo.completed})`,
+            },
+          ],
+          details: { id: todo.id, updated: true },
+        };
+      },
+    },
+
+    {
+      name: "delete_todo",
+      label: "删除待办事项",
+      description: "删除指定的待办事项",
+      parameters: Type.Object({
+        id: Type.Number({ description: "待办事项ID" }),
+      }),
+      execute: async (toolCallId, params) => {
+        todosService.remove(userId, params.id);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✓ 已删除 ID: ${params.id}`,
+            },
+          ],
+          details: { id: params.id, deleted: true },
+        };
+      },
+    },
+
+    {
+      name: "batch_complete_todos",
+      label: "批量完成待办事项",
+      description: "批量将多个待办事项标记为完成",
+      parameters: Type.Object({
+        ids: Type.Array(Type.Number(), {
+          description: "要完成的待办事项ID列表",
+        }),
+      }),
+      execute: async (toolCallId, params) => {
+        const completed: number[] = [];
+        const failed: number[] = [];
+
+        for (const id of params.ids) {
+          try {
+            todosService.update(userId, id, { completed: true });
+            completed.push(id);
+          } catch {
+            failed.push(id);
+          }
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `批量完成: ${completed.length} 成功${failed.length > 0 ? `, ${failed.length} 失败` : ""}`,
+            },
+          ],
+          details: { completed, failed },
+        };
+      },
+    },
+  ];
+}
 
 /**
  * Todos Agent 工厂
@@ -178,116 +189,8 @@ export const todosAgent = {
     // 获取默认模型
     const model = await getDefaultModel();
 
-    // 创建带有 userId 闭包的工具
-    const tools: AgentTool[] = [
-      {
-        ...listTodosTool,
-        execute: async (toolCallId, params, signal, onUpdate) => {
-          const todos = todosService.list(userId);
-          const filtered = params.includeCompleted
-            ? todos
-            : todos.filter((t) => !t.completed);
-
-          onUpdate?.({
-            content: [
-              {
-                type: "text",
-                text: `找到 ${filtered.length} 个待办事项`,
-              },
-            ],
-            details: {},
-          });
-
-          const todoList = filtered
-            .map((t) => `[${t.completed ? "x" : " "}] ${t.id}: ${t.title}`)
-            .join("\n");
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: todoList || "暂无待办事项",
-              },
-            ],
-            details: { todos: filtered, count: filtered.length },
-          };
-        },
-      },
-      {
-        ...createTodoTool,
-        execute: async (toolCallId, params) => {
-          const todo = todosService.create(userId, params.title);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `✓ 已创建: "${todo.title}" (ID: ${todo.id})`,
-              },
-            ],
-            details: { id: todo.id, title: todo.title },
-          };
-        },
-      },
-      {
-        ...updateTodoTool,
-        execute: async (toolCallId, params) => {
-          const todo = todosService.update(userId, params.id, {
-            title: params.title,
-            completed: params.completed,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: `✓ 已更新: "${todo.title}" (ID: ${todo.id}, 完成: ${todo.completed})`,
-              },
-            ],
-            details: { id: todo.id, updated: true },
-          };
-        },
-      },
-      {
-        ...deleteTodoTool,
-        execute: async (toolCallId, params) => {
-          todosService.remove(userId, params.id);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `✓ 已删除 ID: ${params.id}`,
-              },
-            ],
-            details: { id: params.id, deleted: true },
-          };
-        },
-      },
-      {
-        ...batchCompleteTool,
-        execute: async (toolCallId, params) => {
-          const completed: number[] = [];
-          const failed: number[] = [];
-
-          for (const id of params.ids) {
-            try {
-              todosService.update(userId, id, { completed: true });
-              completed.push(id);
-            } catch {
-              failed.push(id);
-            }
-          }
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: `批量完成: ${completed.length} 成功${failed.length > 0 ? `, ${failed.length} 失败` : ""}`,
-              },
-            ],
-            details: { completed, failed },
-          };
-        },
-      },
-    ];
+    // 创建工具（工厂函数直接注入 userId，无需重复定义）
+    const tools = createTodosTools(userId);
 
     // 注册工具到全局注册表（可选）
     for (const tool of tools) {

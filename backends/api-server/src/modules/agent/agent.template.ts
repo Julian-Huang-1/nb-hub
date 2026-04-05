@@ -2,6 +2,8 @@
  * Agent 模板文件
  * 复制此文件到业务模块目录下，重命名为 [module].agent.ts
  * 然后按照 TODO 注释进行修改
+ * 
+ * 推荐使用【工厂函数模式】定义工具，避免重复代码
  */
 
 import { Type } from "@sinclair/typebox";
@@ -18,49 +20,56 @@ import {
 // TODO: 导入你的 service
 // import { myService } from "./my.service.js";
 
-// TODO: 定义你的工具
-const exampleTool: AgentTool = {
-  name: "example_operation",
-  label: "示例操作",
-  description: "这是一个示例工具，请根据业务需求修改",
-  parameters: Type.Object({
-    input: Type.String({
-      description: "输入参数",
-      minLength: 1,
-    }),
-    option: Type.Optional(
-      Type.Boolean({
-        description: "可选参数",
-        default: false,
-      })
-    ),
-  }),
-  execute: async (
-    _toolCallId,
-    params,
-    _signal,
-    onUpdate
-  ): Promise<AgentToolResult<{ input: string; processed: boolean }>> => {
-    // 可选：发送进度更新
-    onUpdate?.({
-      content: [{ type: "text", text: "正在处理..." }],
-      details: {},
-    });
+/**
+ * 创建工具列表（工厂函数模式）
+ * 直接在函数内使用 userId，避免重复定义
+ */
+function createMyTools(userId: string): AgentTool[] {
+  return [
+    {
+      name: "example_operation",
+      label: "示例操作",
+      description: "这是一个示例工具，请根据业务需求修改",
+      parameters: Type.Object({
+        input: Type.String({
+          description: "输入参数",
+          minLength: 1,
+        }),
+        option: Type.Optional(
+          Type.Boolean({
+            description: "可选参数",
+            default: false,
+          })
+        ),
+      }),
+      execute: async (toolCallId, params, signal, onUpdate) => {
+        // 可选：发送进度更新
+        onUpdate?.({
+          content: [{ type: "text", text: "正在处理..." }],
+          details: {},
+        });
 
-    // TODO: 实现工具逻辑
-    const result = {
-      input: params.input,
-      processed: params.option,
-    };
+        // TODO: 在这里调用你的 service，直接使用 userId
+        // const result = await myService.doSomething(userId, params.input);
 
-    return {
-      content: [{ type: "text", text: `处理完成: ${params.input}` }],
-      details: result,
-    };
-  },
-};
+        return {
+          content: [{ type: "text", text: `处理完成: ${params.input}` }],
+          details: { userId, input: params.input, processed: params.option },
+        };
+      },
+    },
 
-// TODO: 定义更多工具...
+    // TODO: 添加更多工具...
+    // {
+    //   name: "another_tool",
+    //   label: "另一个工具",
+    //   ...
+    //   execute: async (toolCallId, params) => {
+    //     // 直接使用 userId
+    //   },
+    // },
+  ];
+}
 
 /**
  * [Module] Agent 工厂
@@ -88,26 +97,13 @@ export const myAgent = {
     // 获取默认模型
     const model = await getDefaultModel();
 
-    // TODO: 定义工具列表
-    // 如果需要注入 userId，可以包装工具
-    const tools: AgentTool[] = [
-      {
-        ...exampleTool,
-        execute: async (toolCallId, params, signal, onUpdate) => {
-          // TODO: 在这里调用你的 service，注入 userId
-          // const result = await myService.doSomething(userId, params.input);
+    // 创建工具（工厂函数直接注入 userId）
+    const tools = createMyTools(userId);
 
-          return {
-            content: [{ type: "text", text: `User ${userId}: ${params.input}` }],
-            details: { userId, input: params.input },
-          };
-        },
-      },
-      // 可以使用通用工具
-      // ...commonTools,
-    ];
+    // 可选：合并通用工具
+    // const tools = [...createMyTools(userId), ...commonTools];
 
-    // 可选：注册工具到全局注册表
+    // 注册工具到全局注册表（可选）
     for (const tool of tools) {
       toolRegistry.register(tool);
     }
