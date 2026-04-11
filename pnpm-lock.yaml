@@ -315,6 +315,21 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
+  packages/hi-cli:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.14
+        version: 22.19.15
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
 packages:
 
   '@anthropic-ai/sdk@0.73.0':
