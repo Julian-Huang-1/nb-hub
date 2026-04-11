@@ -2,15 +2,9 @@ import cors from "cors";
 import express, { type Response } from "express";
 import path from "node:path";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { desc, sql } from "drizzle-orm";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import type { ApiSuccess, AuthSessionResponseData } from "@nb-hub/contracts";
 import { db } from "./db/index.js";
-import { posts } from "./db/schema.js";
-import { analyticsRouter } from "./modules/analytics/analytics.routes.js";
-import { chatRouter } from "./modules/chat/chat.routes.js";
-import { confusionsRouter } from "./modules/confusions/confusions.routes.js";
-import { assistRouter } from "./modules/assist/assist.routes.js";
 import { documentsRouter } from "./modules/documents/documents.routes.js";
 import { ankiRouter } from "./modules/anki/anki.routes.js";
 import { todosRouter } from "./modules/todos/todos.routes.js";
@@ -82,13 +76,9 @@ app.get(
   },
 );
 app.use("/documents", requireSession, documentsRouter);
-app.use("/chat", requireSession, chatRouter);
-app.use("/confusions", requireSession, confusionsRouter);
 app.use("/anki", requireSession, ankiRouter);
 app.use("/todos", requireSession, todosRouter);
 app.use("/todos", requireSession, todosAgentRouter);
-app.use("/analytics", analyticsRouter);
-app.use("/assist", assistRouter);
 app.use("/hi", hiRouter);
 
 app.get("/health", (_req, res) => {
