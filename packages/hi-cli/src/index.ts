@@ -42,6 +42,8 @@ const shell = detectShell();
 const cwd = process.cwd();
 
 async function main() {
+  const spinner = createSpinner();
+
   let res: Response;
   try {
     res = await fetch(`${server}/hi/command`, {
@@ -50,6 +52,7 @@ async function main() {
       body: JSON.stringify({ query, shell, cwd }),
     });
   } catch (err) {
+    spinner.stop();
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`hi: cannot reach api-server at ${server} — ${msg}\n`);
     process.stderr.write(
@@ -59,6 +62,7 @@ async function main() {
   }
 
   const json = (await res.json()) as { status: string; command?: string; message?: string };
+  spinner.stop();
 
   if (!res.ok || json.status !== "ok" || !json.command) {
     process.stderr.write(`hi: ${json.message ?? "unknown error"}\n`);
@@ -74,6 +78,45 @@ main().catch((err) => {
 });
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Writes directly to /dev/tty, bypassing stdout/stderr redirection.
+ * This is necessary because the shell wrapper captures both streams:
+ *   cmd=$(command hi "$@" 2>/tmp/hi-err)
+ * Writing to /dev/tty reaches the real terminal regardless.
+ */
+function createSpinner() {
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  const label = " thinking...";
+  const dim = "\x1b[2m";
+  const reset = "\x1b[0m";
+  const clearLine = "\r\x1b[K";
+
+  let tty: fs.WriteStream | null = null;
+  try {
+    tty = fs.createWriteStream("/dev/tty");
+  } catch {
+    return { stop: () => {} };
+  }
+
+  let frame = 0;
+  const write = (s: string) => tty!.write(s);
+
+  write(`${dim}${frames[0]}${label}${reset}`);
+
+  const timer = setInterval(() => {
+    frame = (frame + 1) % frames.length;
+    write(`${clearLine}${dim}${frames[frame]}${label}${reset}`);
+  }, 80);
+
+  return {
+    stop() {
+      clearInterval(timer);
+      write(clearLine);
+      tty!.end();
+    },
+  };
+}
 
 function detectShell(): string {
   return path.basename(process.env.SHELL ?? "zsh");
