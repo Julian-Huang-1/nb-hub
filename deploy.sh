@@ -45,14 +45,21 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s -- "$OPENROUTER_API_KEY" << 'REMOTE_SCRIP
     fi
     chmod 600 "$SERVER_ENV_FILE"
 
-    # 同步注入到 zsh / bash 配置文件，供交互式登录 shell 使用
+    # 写入 /etc/profile.d/ 确保所有用户、所有 shell（bash/zsh）登录时都能加载
+    PROFILED_FILE="/etc/profile.d/nb_hub_env.sh"
+    if grep -q '^export OPENROUTER_API_KEY=' "$PROFILED_FILE" 2>/dev/null; then
+      sed -i "s|^export OPENROUTER_API_KEY=.*|export OPENROUTER_API_KEY=$OPENROUTER_API_KEY|" "$PROFILED_FILE"
+    else
+      echo "export OPENROUTER_API_KEY=$OPENROUTER_API_KEY" >> "$PROFILED_FILE"
+    fi
+    chmod 644 "$PROFILED_FILE"
+
+    # 同时注入到 root 的 rc 文件（文件不存在则创建），供非登录交互式 shell 使用
     for RC_FILE in "$HOME/.zshrc" "$HOME/.bashrc"; do
-      if [ -f "$RC_FILE" ]; then
-        if grep -q '^export OPENROUTER_API_KEY=' "$RC_FILE" 2>/dev/null; then
-          sed -i "s|^export OPENROUTER_API_KEY=.*|export OPENROUTER_API_KEY=$OPENROUTER_API_KEY|" "$RC_FILE"
-        else
-          echo "export OPENROUTER_API_KEY=$OPENROUTER_API_KEY" >> "$RC_FILE"
-        fi
+      if grep -q '^export OPENROUTER_API_KEY=' "$RC_FILE" 2>/dev/null; then
+        sed -i "s|^export OPENROUTER_API_KEY=.*|export OPENROUTER_API_KEY=$OPENROUTER_API_KEY|" "$RC_FILE"
+      else
+        echo "export OPENROUTER_API_KEY=$OPENROUTER_API_KEY" >> "$RC_FILE"
       fi
     done
   fi
