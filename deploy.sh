@@ -81,9 +81,11 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s -- "$OPENROUTER_API_KEY" << 'REMOTE_SCRIP
   echo "=== Building all packages ==="
   pnpm run ci:full
 
-  echo "=== Reloading services via ecosystem ==="
+  echo "=== OPENROUTER_API_KEY is set: $([ -n "${OPENROUTER_API_KEY:-}" ] && echo YES || echo NO) ==="
+
+  echo "=== Restarting services via ecosystem ==="
   if $PM2_CMD describe "api-server" >/dev/null 2>&1; then
-    $PM2_CMD reload "$PROJECT_DIR/ecosystem.config.js" --update-env
+    $PM2_CMD restart "$PROJECT_DIR/ecosystem.config.js" --update-env
   else
     $PM2_CMD start "$PROJECT_DIR/ecosystem.config.js"
   fi
