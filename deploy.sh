@@ -37,13 +37,24 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s -- "$OPENROUTER_API_KEY" << 'REMOTE_SCRIP
   OPENROUTER_API_KEY="${1:-}"
   if [ -n "$OPENROUTER_API_KEY" ]; then
     touch "$SERVER_ENV_FILE"
-    # 更新或追加
+    # 更新或追加到 server env 文件
     if grep -q '^OPENROUTER_API_KEY=' "$SERVER_ENV_FILE" 2>/dev/null; then
       sed -i "s|^OPENROUTER_API_KEY=.*|OPENROUTER_API_KEY=$OPENROUTER_API_KEY|" "$SERVER_ENV_FILE"
     else
       echo "OPENROUTER_API_KEY=$OPENROUTER_API_KEY" >> "$SERVER_ENV_FILE"
     fi
     chmod 600 "$SERVER_ENV_FILE"
+
+    # 同步注入到 zsh / bash 配置文件，供交互式登录 shell 使用
+    for RC_FILE in "$HOME/.zshrc" "$HOME/.bashrc"; do
+      if [ -f "$RC_FILE" ]; then
+        if grep -q '^export OPENROUTER_API_KEY=' "$RC_FILE" 2>/dev/null; then
+          sed -i "s|^export OPENROUTER_API_KEY=.*|export OPENROUTER_API_KEY=$OPENROUTER_API_KEY|" "$RC_FILE"
+        else
+          echo "export OPENROUTER_API_KEY=$OPENROUTER_API_KEY" >> "$RC_FILE"
+        fi
+      fi
+    done
   fi
 
   # 将持久化的 env 导出到当前 shell，pm2 reload --update-env 会读取
