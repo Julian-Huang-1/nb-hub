@@ -1,8 +1,11 @@
 {
   "name": "@nb-hub/hi-cli",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "bin": {
     "hi": "./dist/index.js"
   },
@@ -11,7 +14,7 @@
     "shell"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && chmod +x dist/index.js",
     "dev": "tsx src/index.ts"
   },
   "devDependencies": {

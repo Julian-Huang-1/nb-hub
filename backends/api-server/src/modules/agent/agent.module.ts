@@ -372,8 +372,8 @@ export async function getDefaultModel(): Promise<Model<any>> {
   const { getModel, getProviders, getModels } =
     await import("@mariozechner/pi-ai");
 
-  const provider = process.env.AI_PROVIDER ?? "kimi-coding";
-  const modelName = process.env.AI_MODEL ?? "kimi-k2-thinking";
+  const provider = process.env.AI_PROVIDER ?? "openrouter";
+  const modelName = process.env.AI_MODEL ?? "qwen/qwen3.6-plus";
 
   try {
     const model = getModel(provider, modelName);
