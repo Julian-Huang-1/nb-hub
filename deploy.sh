@@ -33,7 +33,8 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash -s -- "$OPENROUTER_API_KEY" << 'REMOTE_SCRIP
   SERVER_ENV_FILE="/opt/myapp/.server_env"
 
   # 接收 GitHub 传入的 key 并持久化，以便服务重启后仍可用
-  OPENROUTER_API_KEY="$1"
+  # ${1:-} 兼容 -u 模式：$1 未传入时视为空字符串而非报错
+  OPENROUTER_API_KEY="${1:-}"
   if [ -n "$OPENROUTER_API_KEY" ]; then
     touch "$SERVER_ENV_FILE"
     # 更新或追加
