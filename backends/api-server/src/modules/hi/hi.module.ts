@@ -19,6 +19,7 @@ export async function generateShellCommand(
   cwd: string,
 ): Promise<string> {
   const model = await getDefaultModel();
+  console.log("props", { query, shell, cwd, model });
 
   const agent = await createAgent(
     {
@@ -40,6 +41,7 @@ Rules:
   );
 
   const result = await agent.prompt(query);
+  console.log("result", result);
 
   if (!result.success) {
     throw new Error(result.error ?? "AI failed to generate a command");

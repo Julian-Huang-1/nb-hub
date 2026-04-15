@@ -374,6 +374,7 @@ export async function getDefaultModel(): Promise<Model<any>> {
 
   const provider = process.env.AI_PROVIDER ?? "openrouter";
   const modelName = process.env.AI_MODEL ?? "qwen/qwen3.6-plus";
+  console.log("getDefaultModel", { provider, modelName });
 
   try {
     const model = getModel(provider, modelName);
