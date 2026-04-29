@@ -23,11 +23,19 @@ chmod 600 "$SSH_KEY_FILE"
 SSH_CMD="ssh -i $SSH_KEY_FILE -o StrictHostKeyChecking=no"
 
 # SSH 到服务器，一次性完成：拉代码 → 安装依赖 → 构建 → 重启服务
-$SSH_CMD "$ECS_USER@$ECS_HOST" bash << 'REMOTE_SCRIPT'
+$SSH_CMD "$ECS_USER@$ECS_HOST" bash -s -- "$OPENROUTER_API_KEY" "$BETTER_AUTH_SECRET" << 'REMOTE_SCRIPT'
   set -euo pipefail
 
   PROJECT_DIR="/opt/myapp/nb-hub"
   PM2_CMD="pm2"
+  ENV_FILE="$PROJECT_DIR/.env.production"
+
+  # 将 GitHub Secrets 写入服务器 .env.production（持久化）
+  cat > "$ENV_FILE" << ENVEOF
+OPENROUTER_API_KEY=${1}
+BETTER_AUTH_SECRET=${2}
+ENVEOF
+  chmod 600 "$ENV_FILE"
 
   cd "$PROJECT_DIR"
 
@@ -39,11 +47,9 @@ $SSH_CMD "$ECS_USER@$ECS_HOST" bash << 'REMOTE_SCRIPT'
   pnpm run ci:full
 
   echo "=== Restarting services via ecosystem ==="
-  if $PM2_CMD describe "api-server" >/dev/null 2>&1; then
-    $PM2_CMD restart "$PROJECT_DIR/ecosystem.config.js" --update-env
-  else
-    $PM2_CMD start "$PROJECT_DIR/ecosystem.config.js"
-  fi
+  # delete + start 确保 ecosystem.config.js 被重新执行，loadEnvFile 每次都能读到最新的 .env.production
+  $PM2_CMD delete "$PROJECT_DIR/ecosystem.config.js" 2>/dev/null || true
+  $PM2_CMD start "$PROJECT_DIR/ecosystem.config.js"
 
   $PM2_CMD save
 
