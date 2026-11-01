@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+
+catalog:
+  '@types/node': ^22.15.0
+  '@types/react': ^19.2.0
+  '@types/react-dom': ^19.2.0
+  '@tanstack/react-query': ^5.96.2
+  react: 19.2.3
+  react-dom: 19.2.3
+  typescript: ^5.9.3
+  zod: ^4.1.5
+  zustand: ^5.0.0

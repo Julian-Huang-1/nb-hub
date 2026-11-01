@@ -1,0 +1,16 @@
+{
+  "name": "nb-hub",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.34.4",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev:web": "pnpm --filter @nb-hub/web dev",
+    "dev:desktop": "pnpm --filter @nb-hub/desktop dev",
+    "dev:mobile": "pnpm --filter @nb-hub/mobile dev",
+    "build:web": "pnpm --filter @nb-hub/web build",
+    "build:desktop": "pnpm --filter @nb-hub/desktop build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test"
+  }
+}

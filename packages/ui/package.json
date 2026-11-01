@@ -1,0 +1,13 @@
+{
+  "name": "@nb-hub/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { "./button": "./src/button.tsx" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "react": "catalog:" },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  }
+}
