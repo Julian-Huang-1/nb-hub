@@ -3,14 +3,27 @@
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.34.4",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "ui:add": "pnpm --filter @nb-hub/ui exec shadcn add",
     "dev:web": "pnpm --filter @nb-hub/web dev",
     "dev:desktop": "pnpm --filter @nb-hub/desktop dev",
     "dev:mobile": "pnpm --filter @nb-hub/mobile dev",
     "build:web": "pnpm --filter @nb-hub/web build",
     "build:desktop": "pnpm --filter @nb-hub/desktop build",
-    "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test"
+    "typecheck": "pnpm -r --if-present typecheck && pnpm typecheck:e2e",
+    "test": "pnpm --filter '!@nb-hub/mobile' -r --if-present test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:coverage": "pnpm --filter '!@nb-hub/mobile' -r --if-present test:coverage",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "catalog:",
+    "dotenv": "^17.2.3",
+    "typescript": "catalog:"
   }
 }

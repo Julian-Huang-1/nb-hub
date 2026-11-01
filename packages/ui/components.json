@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@nb-hub/ui/components",
+    "ui": "@nb-hub/ui/components",
+    "utils": "@nb-hub/ui/lib/utils",
+    "lib": "@nb-hub/ui/lib",
+    "hooks": "@nb-hub/ui/hooks"
+  }
+}

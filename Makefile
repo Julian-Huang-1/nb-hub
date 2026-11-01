@@ -1,4 +1,4 @@
-.PHONY: dev-web dev-desktop dev-mobile api daemon test
+.PHONY: dev-web dev-desktop dev-mobile api daemon test test-e2e
 
 dev-web:
 	pnpm dev:web
@@ -17,4 +17,8 @@ daemon:
 
 test:
 	pnpm typecheck
+	pnpm test
 	cd server && go test ./...
+
+test-e2e:
+	pnpm test:e2e

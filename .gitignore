@@ -6,3 +6,9 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+.env.worktree
+coverage/
+.vitest/
+test-results/
+playwright-report/
+playwright/.cache/

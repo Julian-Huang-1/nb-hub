@@ -3,8 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { "./home": "./src/home.tsx" },
-  "scripts": { "typecheck": "tsc --noEmit" },
+  "exports": {
+    "./home": "./src/home.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
   "dependencies": {
     "@nb-hub/core": "workspace:*",
     "@nb-hub/ui": "workspace:*",
@@ -13,6 +20,15 @@
   },
   "devDependencies": {
     "@types/react": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "jsdom": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react-dom": "catalog:"
   }
 }

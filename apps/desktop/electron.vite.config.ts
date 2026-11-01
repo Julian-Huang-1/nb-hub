@@ -1,8 +1,9 @@
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   main: { plugins: [externalizeDepsPlugin({})] },
   preload: { plugins: [externalizeDepsPlugin({})] },
-  renderer: { plugins: [react({})], resolve: { dedupe: ["react", "react-dom", "@tanstack/react-query"] } },
+  renderer: { plugins: [react({}), tailwindcss()], resolve: { dedupe: ["react", "react-dom", "@tanstack/react-query"] } },
 });
