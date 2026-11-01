@@ -1,7 +1,0 @@
-packages:
-  - apps/*
-  - packages/*
-  - backends/*
-
-onlyBuiltDependencies:
-  - better-sqlite3
