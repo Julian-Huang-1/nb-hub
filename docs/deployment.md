@@ -203,9 +203,13 @@ TLS 证书、配额、文件备份及 CLI 操作见[静态站点指南](static-s
 提供 Bash、Docker Compose v2、curl、gzip、tar 和 flock。安全组及 SSH 配置需允许
 GitHub runner 连接指定 SSH 端口，对外应用只开放已有 80/443。
 
-部署根目录示例为 `/opt/nb-hub`。在该目录准备 `.env.production`，权限设为 600，
-内容沿用前文的生产配置；不能上传 `.env.development`。数据库密码、JWT 和邮件凭据
-只保存在服务器。已有生产库必须继续使用原有密码和卷。
+部署根目录示例为 `/opt/nb-hub`。CI 的配置来源统一为 GitHub production 环境的
+`PRODUCTION_ENV` Secret，内容是完整的、shell 兼容的生产 `.env.production`。
+部署通过 SSH 标准输入单独传输配置，不进入镜像、发布归档或命令参数；服务器
+校验后原子写入 `/opt/nb-hub/.env.production`，权限为 600。
+首次部署可直接从 Secret 生成文件，不再要求预先在服务器创建配置。
+已有生产环境迁移时必须保留原数据库密码、JWT 密钥及数据卷，不能重新随机生成。
+不要上传 `.env.development`。
 启用静态托管时，内容通配证书继续放在根目录的 `deploy/content-tls/`。
 
 为 CI 使用一把专用 SSH 密钥，将公钥加入部署用户的 `authorized_keys`；私钥保存到
@@ -224,6 +228,7 @@ GitHub Secrets，不提交仓库或发送到聊天。通过可信连接取得并
 | `DEPLOY_PORT` | SSH 端口，空值默认为 22 |
 | `DEPLOY_SSH_KEY` | 专用私钥全文，无交互口令 |
 | `DEPLOY_KNOWN_HOSTS` | 已核对的服务器 known_hosts 行 |
+| `PRODUCTION_ENV` | 完整生产配置，包含 DOMAIN、数据库密码、JWT、SMTP、登录和站点配置等 |
 
 在仓库 Settings → Secrets and variables → Actions → Variables 添加：
 
@@ -244,7 +249,7 @@ SSH host key 强制校验；不会采用跳过校验的连接方式。
 
 ```text
 /opt/nb-hub/
-  .env.production                 # 服务器凭据
+  .env.production                 # 部署从 GitHub Secret 生成的运行配置
   deploy/content-tls/             # 可选内容域名证书
   releases/<release-id>/           # Compose、Caddy 配置及 images.env
   current -> releases/<release-id> # 最近一次通过检查的发布
@@ -294,3 +299,20 @@ API/Web 分别只绑定 `127.0.0.1:18081` 和 `127.0.0.1:18080`，不启动 Cadd
 
 发布包同时包含 PostgreSQL/Caddy 基础镜像，避免阿里云服务器直连 Docker Hub
 失败影响首次上线。SSH 的专用 CI 密钥仅用于此部署，原有运维私钥不上传 GitHub。
+
+### 更新生产配置
+
+在仓库 Settings → Environments → production → Environment secrets 更新
+`PRODUCTION_ENV`，保留未修改的配置行，然后手动运行 main 的 CI / CD 工作流。
+Secret 保存后不会自动触发运行。SMTP 等参数在下次部署时写入服务器并使对应容器重建。
+直接修改服务器文件仅会临时生效，后续部署会按 Secret 覆盖。
+
+缺失或空的 `PRODUCTION_ENV` 会阻止部署，不会回退到旧配置继续报告成功。
+配置写入前必须包含域名、数据库密码、JWT 密钥并通过 Compose 校验。
+数据库密码更新还需要单独修改 PostgreSQL 中已有角色的密码；修改 Secret 不能
+自动更改持久化数据库里的密码。JWT 密钥变更会使现有登录会话令牌失效。
+
+阿里云邮件推送杭州地域可使用 `SMTP_HOST=smtpdm.aliyun.com`、`SMTP_PORT=80`，
+应用会强制升级 STARTTLS 并校验 TLS 证书。用户名和发件地址均使用完整的已验证
+发信地址，SMTP 密码写入 `PRODUCTION_ENV` 的 `SMTP_PASSWORD`。
+端口与地域说明见[阿里云 SMTP 文档](https://help.aliyun.com/zh/direct-mail/smtp-endpoints)。

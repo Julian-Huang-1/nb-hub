@@ -127,12 +127,16 @@ jobs:
           tar -cf "$RUNNER_TEMP/release.tar" -C "$RUNNER_TEMP/release" .
       - name: Upload and activate release
         shell: bash
+        env:
+          PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
         run: |
           set -euo pipefail
           port="${DEPLOY_PORT:-22}"
           ssh_args=(-i "$HOME/.ssh/nb-hub-deploy" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
           target="$DEPLOY_USER@$DEPLOY_HOST"
+          test -n "$PRODUCTION_ENV"
           ssh "${ssh_args[@]}" -p "$port" "$target" "mkdir -p '$DEPLOY_DIR/incoming/$RELEASE_ID'"
+          printf '%s\n' "$PRODUCTION_ENV" | ssh "${ssh_args[@]}" -p "$port" "$target" "umask 077; cat > '$DEPLOY_DIR/incoming/$RELEASE_ID/production.env'"
           scp "${ssh_args[@]}" -P "$port" "$RUNNER_TEMP/release.tar" scripts/deploy-production.sh "$target:$DEPLOY_DIR/incoming/$RELEASE_ID/"
           ssh -n "${ssh_args[@]}" -p "$port" "$target" "bash '$DEPLOY_DIR/incoming/$RELEASE_ID/deploy-production.sh' '$DEPLOY_DIR' '$RELEASE_ID' '$GITHUB_SHA' '$DEPLOY_PLATFORM'"
           ssh -n "${ssh_args[@]}" -p "$port" "$target" "grep -qxF '$GITHUB_SHA' '$DEPLOY_DIR/current/commit-sha'"

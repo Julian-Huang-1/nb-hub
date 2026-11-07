@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Invoked over SSH by GitHub Actions. Production credentials remain on the host.
+# Invoked over SSH by GitHub Actions. Production config arrives separately from Secrets.
 set -euo pipefail
 umask 077
 
@@ -19,13 +19,16 @@ command -v flock > /dev/null
 command -v docker > /dev/null
 command -v curl > /dev/null
 docker compose version > /dev/null
-[[ -f "$deploy_root/.env.production" ]] || { echo 'Missing server-side .env.production' >&2; exit 1; }
 exec 9> "$deploy_root/.deploy.lock"
 flock -n 9 || { echo 'Another production deployment is running' >&2; exit 1; }
 
-# This repository defines .env.production as a trusted shell-compatible file.
-# Do not print its contents or send it through Actions.
-source "$deploy_root/.env.production"
+# A deployment must supply fresh configuration; never silently use a stale file.
+deploy_config="$deploy_root/incoming/$deploy_id/production.env"
+[[ -f "$deploy_config" && ! -L "$deploy_config" && -s "$deploy_config" ]] || { echo 'Missing production configuration from GitHub Secrets' >&2; exit 1; }
+chmod 600 "$deploy_config"
+# This is trusted, shell-compatible configuration managed by the repository owner.
+# It is never printed, included in release archives, or passed as command arguments.
+source "$deploy_config" 2>/dev/null || { echo 'Invalid production configuration' >&2; exit 1; }
 [[ "${DEPLOY_PLATFORM:-linux/amd64}" == "$deploy_platform" ]] || { echo 'Server and CI platform differ' >&2; exit 1; }
 [[ -n "${DOMAIN:-}" && -n "${JWT_SECRET:-}" && -n "${POSTGRES_PASSWORD:-}" ]]
 export API_IMAGE="nb-hub-api:$deploy_id"
@@ -39,7 +42,7 @@ mkdir -p "$deploy_root/releases"
 mkdir "$deploy_release"
 tar -xf "$deploy_archive" -C "$deploy_release"
 printf 'API_IMAGE=%s\nWEB_IMAGE=%s\nDEPLOY_PLATFORM=%s\n' "$API_IMAGE" "$WEB_IMAGE" "$DEPLOY_PLATFORM" > "$deploy_release/images.env"
-deploy_compose=(docker compose --project-name nb-hub-prod --env-file "$deploy_root/.env.production" --env-file "$deploy_release/images.env" -f "$deploy_release/docker-compose.production.yml")
+deploy_compose=(docker compose --project-name nb-hub-prod --env-file "$deploy_config" --env-file "$deploy_release/images.env" -f "$deploy_release/docker-compose.production.yml")
 deploy_proxy_mode="${NB_HUB_PROXY_MODE:-bundled}"
 [[ "$deploy_proxy_mode" == bundled || "$deploy_proxy_mode" == external ]] || { echo 'Invalid NB_HUB_PROXY_MODE' >&2; exit 1; }
 if [[ "$deploy_proxy_mode" == external ]]; then
@@ -50,7 +53,11 @@ elif [[ -n "${NB_HUB_CONTENT_DOMAIN:-}" ]]; then
   deploy_compose+=(-f "$deploy_release/docker-compose.sites.yml")
 fi
 # Validate silently: the rendered config includes credentials.
-"${deploy_compose[@]}" config --quiet
+"${deploy_compose[@]}" config --quiet > /dev/null 2>&1 || { echo 'Invalid production Compose configuration' >&2; exit 1; }
+# Install atomically only after configuration validation, preserving existing
+# database credentials and file permissions across releases.
+mv -f "$deploy_config" "$deploy_root/.env.production"
+deploy_compose=("${deploy_compose[@]/$deploy_config/$deploy_root/.env.production}")
 gzip -dc "$deploy_release/images.tar.gz" | docker load
 "${deploy_compose[@]}" up -d --wait --wait-timeout 90 postgres
 

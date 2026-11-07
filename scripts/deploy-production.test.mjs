@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readlinkSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readlinkSync, rmSync, statSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,7 +26,7 @@ function fixture(t, { sites = false, failure = '', external = false } = {}) {
   writeFileSync(path.join(payload, 'docker-compose.external-proxy.yml'), 'services: {}\n');
   mkdirSync(path.join(payload, 'deploy'));
   execFileSync('tar', ['-cf', path.join(incoming, 'release.tar'), '-C', payload, '.'], { env: { ...process.env, LC_ALL: 'C' } });
-  writeFileSync(path.join(root, '.env.production'), `DOMAIN=hub.example.com\nPOSTGRES_PASSWORD=private-db-secret\nJWT_SECRET=private-jwt-secret\nDEPLOY_PLATFORM=linux/amd64\nNB_HUB_PROXY_MODE=${external ? 'external' : 'bundled'}\nNB_HUB_CONTENT_DOMAIN=${sites ? 'content.example.net' : ''}\n`);
+  writeFileSync(path.join(incoming, 'production.env'), `DOMAIN=hub.example.com\nPOSTGRES_PASSWORD=private-db-secret\nJWT_SECRET=private-jwt-secret\nDEPLOY_PLATFORM=linux/amd64\nNB_HUB_PROXY_MODE=${external ? 'external' : 'bundled'}\nNB_HUB_CONTENT_DOMAIN=${sites ? 'content.example.net' : ''}\n`);
   if (sites) {
     const tls = path.join(root, 'deploy/content-tls');
     mkdirSync(tls, { recursive: true });
@@ -37,7 +37,13 @@ function fixture(t, { sites = false, failure = '', external = false } = {}) {
   writeFileSync(path.join(bin, 'docker'), `#!/bin/bash
 set -e
 printf '%s\\n' "$*" >> "$TEST_LOG"
+previous=''
+for argument in "$@"; do
+  if [[ "$previous" == --env-file ]]; then test -f "$argument" || exit 24; fi
+  previous="$argument"
+done
 if [[ "$1" == load ]]; then cat > /dev/null; fi
+if [[ "$*" == *'config --quiet'* && "$FAIL_STAGE" == config ]]; then echo 'private-db-secret' >&2; exit 23; fi
 if [[ "$*" == *'run --rm --no-deps migrate'* ]]; then cat > /dev/null; fi
 if [[ "$*" == *'run --rm --no-deps migrate'* && "$FAIL_STAGE" == migration ]]; then exit 20; fi
 if [[ "$*" == *'up -d --no-build --no-deps --wait'* && "$FAIL_STAGE" == application ]]; then exit 21; fi
@@ -128,4 +134,38 @@ test('migration cannot consume the SSH script stdin and skip application startup
   assert.equal(result.status, 0, result.stderr);
   assert.equal(existsSync(path.join(f.root, 'current', 'commit-sha')), true);
   assert.match(f.calls(), /up -d --no-build --no-deps --wait/);
+});
+
+test('Secrets config atomically replaces stale server config with private permissions', (t) => {
+  const f = fixture(t);
+  writeFileSync(path.join(f.root, '.env.production'), 'DOMAIN=stale.example.com\n');
+  const result = f.run();
+  assert.equal(result.status, 0, result.stderr);
+  const installed = path.join(f.root, '.env.production');
+  assert.match(readFileSync(installed, 'utf8'), /DOMAIN=hub.example.com/);
+  assert.equal(statSync(installed).mode & 0o777, 0o600);
+  assert.equal(existsSync(path.join(f.root, 'incoming', releaseID, 'production.env')), false);
+  assert.doesNotMatch(result.stdout + result.stderr, /private-db-secret|private-jwt-secret/);
+});
+
+test('missing Secrets config fails without changing the existing server config', (t) => {
+  const f = fixture(t);
+  const old = 'DOMAIN=stale.example.com\n';
+  writeFileSync(path.join(f.root, '.env.production'), old);
+  unlinkSync(path.join(f.root, 'incoming', releaseID, 'production.env'));
+  const result = f.run();
+  assert.notEqual(result.status, 0);
+  assert.equal(readFileSync(path.join(f.root, '.env.production'), 'utf8'), old);
+  assert.doesNotMatch(f.calls(), /load|up -d/);
+});
+
+test('configuration validation errors cannot expose secrets or replace server config', (t) => {
+  const f = fixture(t, { failure: 'config' });
+  const old = 'DOMAIN=stale.example.com\n';
+  writeFileSync(path.join(f.root, '.env.production'), old);
+  const result = f.run();
+  assert.notEqual(result.status, 0);
+  assert.equal(readFileSync(path.join(f.root, '.env.production'), 'utf8'), old);
+  assert.doesNotMatch(result.stdout + result.stderr, /private-db-secret|private-jwt-secret/);
+  assert.doesNotMatch(f.calls(), /load|up -d/);
 });
