@@ -1,0 +1,140 @@
+name: CI / CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# Serialize each branch through checks and deployment; never cancel an active migration.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: Tests and database integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: nbhub_test_auth
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      NB_HUB_AUTH_TEST_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:5432/nbhub_test_auth?sslmode=disable
+      NB_HUB_SITES_TEST_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:5432/nbhub_test_sites?sslmode=disable
+      NB_HUB_TEST_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:5432/nbhub_test_migrations?sslmode=disable
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare "$(node -p "require('./package.json').packageManager")" --activate
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: Prepare disposable databases
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$POSTGRES_CONTAINER" createdb -U postgres nbhub_test_sites
+          docker exec "$POSTGRES_CONTAINER" createdb -U postgres nbhub_test_migrations
+      - run: pnpm install --frozen-lockfile
+      - run: make test
+      - name: Go static checks
+        working-directory: server
+        run: go vet ./...
+      - name: Verify generated SQL queries
+        run: |
+          make sqlc
+          git diff --exit-code -- server/pkg/db/generated
+
+  deploy:
+    name: Build and deploy to Alibaba Cloud
+    needs: checks
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.event_name != 'pull_request' &&
+      vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+      DEPLOY_PLATFORM: ${{ vars.DEPLOY_PLATFORM || 'linux/amd64' }}
+      RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$DEPLOY_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          [[ "$DEPLOY_PORT" =~ ^[0-9]{1,5}$ ]]
+          (( 10#$DEPLOY_PORT > 0 && 10#$DEPLOY_PORT <= 65535 ))
+          [[ "$DEPLOY_DIR" =~ ^/[a-zA-Z0-9_./-]+$ && "$DEPLOY_DIR" != / && "$DEPLOY_DIR" != *..* ]]
+          [[ "$DEPLOY_PLATFORM" == linux/amd64 ]]
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_KNOWN_HOSTS"
+          install -m 700 -d "$HOME/.ssh"
+          umask 077
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/nb-hub-deploy"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/nb-hub-deploy" > /dev/null
+      - name: Build immutable images
+        run: |
+          docker build --platform "$DEPLOY_PLATFORM" -f Dockerfile.api -t "nb-hub-api:$RELEASE_ID" .
+          docker build --platform "$DEPLOY_PLATFORM" -f Dockerfile.web -t "nb-hub-web:$RELEASE_ID" .
+      - name: Package release
+        run: |
+          mkdir -p "$RUNNER_TEMP/release/deploy"
+          docker pull --platform "$DEPLOY_PLATFORM" postgres:17
+          docker pull --platform "$DEPLOY_PLATFORM" caddy:2-alpine
+          docker save "nb-hub-api:$RELEASE_ID" "nb-hub-web:$RELEASE_ID" postgres:17 caddy:2-alpine | gzip > "$RUNNER_TEMP/release/images.tar.gz"
+          cp docker-compose.production.yml docker-compose.sites.yml docker-compose.external-proxy.yml "$RUNNER_TEMP/release/"
+          cp deploy/Caddyfile deploy/Caddyfile.sites "$RUNNER_TEMP/release/deploy/"
+          tar -cf "$RUNNER_TEMP/release.tar" -C "$RUNNER_TEMP/release" .
+      - name: Upload and activate release
+        shell: bash
+        run: |
+          set -euo pipefail
+          port="${DEPLOY_PORT:-22}"
+          ssh_args=(-i "$HOME/.ssh/nb-hub-deploy" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
+          target="$DEPLOY_USER@$DEPLOY_HOST"
+          ssh "${ssh_args[@]}" -p "$port" "$target" "mkdir -p '$DEPLOY_DIR/incoming/$RELEASE_ID'"
+          scp "${ssh_args[@]}" -P "$port" "$RUNNER_TEMP/release.tar" "$target:$DEPLOY_DIR/incoming/$RELEASE_ID/release.tar"
+          ssh "${ssh_args[@]}" -p "$port" "$target" "bash -s -- '$DEPLOY_DIR' '$RELEASE_ID' '$GITHUB_SHA' '$DEPLOY_PLATFORM'" < scripts/deploy-production.sh
+      - name: Remove SSH credentials
+        if: always()
+        run: rm -f "$HOME/.ssh/nb-hub-deploy"

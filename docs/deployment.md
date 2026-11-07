@@ -183,3 +183,114 @@ NB_HUB_TEST_DATABASE_URL='postgres://user:password@127.0.0.1:5432/nbhub_test_mig
 站点文件使用独立 `sites_data` 卷，API 内运行单并发发布 Worker。生产默认未启用，
 设置独立内容主域并使用 `docker-compose.sites.yml` 后开放内容入口。通配 DNS、
 TLS 证书、配额、文件备份及 CLI 操作见[静态站点指南](static-sites.md)。
+
+## GitHub Actions CI/CD
+
+工作流为 `.github/workflows/ci-cd.yml`。PR 和 main 推送会执行类型检查、前端单测、
+开发环境脚本测试、Go 单测、真实 PostgreSQL 集成测试、go vet 及 sqlc 生成文件检查。
+测试数据库完全位于临时 runner，不连接开发或生产数据库。
+
+自动部署默认关闭。启用后，main 测试通过才会在 GitHub 构建 API/Web 镜像，
+通过 SSH 发送压缩镜像及 Compose 配置，在服务器执行迁移、替换应用并检查 HTTPS。
+服务器只负责加载和运行镜像，不需要 Go、Node 或镜像仓库。
+同一分支的工作流串行执行，不中断正在执行的迁移。PR 不使用生产凭据或部署。
+当前流水线支持 `linux/amd64`；ARM 服务器需先调整 runner/build 配置，不能直接启用。
+
+### 服务器准备（一次）
+
+先确认当前生产 Compose 项目名为 `nb-hub-prod`；已有服务采用其他项目名时，需要先
+核对数据库/文件卷迁移方案，避免启动一套空环境。部署用户需要访问 Docker，主机需
+提供 Bash、Docker Compose v2、curl、gzip、tar 和 flock。安全组及 SSH 配置需允许
+GitHub runner 连接指定 SSH 端口，对外应用只开放已有 80/443。
+
+部署根目录示例为 `/opt/nb-hub`。在该目录准备 `.env.production`，权限设为 600，
+内容沿用前文的生产配置；不能上传 `.env.development`。数据库密码、JWT 和邮件凭据
+只保存在服务器。已有生产库必须继续使用原有密码和卷。
+启用静态托管时，内容通配证书继续放在根目录的 `deploy/content-tls/`。
+
+为 CI 使用一把专用 SSH 密钥，将公钥加入部署用户的 `authorized_keys`；私钥保存到
+GitHub Secrets，不提交仓库或发送到聊天。通过可信连接取得并核对服务器 SSH host key，
+保存完整 known_hosts 行，非 22 端口使用 `[hostname]:port` 格式。
+
+### GitHub 配置
+
+仓库 Settings → Environments 创建 `production`。可将部署分支限制为 main。
+在该环境的 Secrets（或仓库 Actions Secrets）添加：
+
+| Secret | 内容 |
+| --- | --- |
+| `DEPLOY_HOST` | 服务器公网 IPv4 或 SSH 域名，不含协议 |
+| `DEPLOY_USER` | SSH 用户名 |
+| `DEPLOY_PORT` | SSH 端口，空值默认为 22 |
+| `DEPLOY_SSH_KEY` | 专用私钥全文，无交互口令 |
+| `DEPLOY_KNOWN_HOSTS` | 已核对的服务器 known_hosts 行 |
+
+在仓库 Settings → Secrets and variables → Actions → Variables 添加：
+
+| Variable | 内容 |
+| --- | --- |
+| `DEPLOY_DIR` | 服务器绝对部署目录，例如 `/opt/nb-hub`，不含空格 |
+| `DEPLOY_PLATFORM` | `linux/amd64`，必须与服务器和生产配置一致 |
+| `DEPLOY_ENABLED` | 初始设为 `false`，准备完毕后改为 `true` |
+
+`DEPLOY_ENABLED` 必须是仓库级变量，工作流在进入 production 环境前读取它。
+SSH host key 强制校验；不会采用跳过校验的连接方式。
+将工作流提交并推送后，可在 Actions → CI / CD → Run workflow 选择 main 进行首次部署。
+启用后的 main 推送会自动部署。
+
+### 发布行为与运维
+
+每次发布使用独立镜像标签 `<commit-sha>-<run-id>-<attempt>`。服务器的目录为：
+
+```text
+/opt/nb-hub/
+  .env.production                 # 服务器凭据
+  deploy/content-tls/             # 可选内容域名证书
+  releases/<release-id>/           # Compose、Caddy 配置及 images.env
+  current -> releases/<release-id> # 最近一次通过检查的发布
+```
+
+数据库及站点数据继续使用 `nb-hub-prod` 的固定命名卷，不放入 release 目录。
+迁移失败会停止替换应用。应用启动或 HTTPS 检查失败会将工作流标为失败，不会自动
+回滚数据库；`current` 仅记录最近成功的发布，故障时仍应检查实际运行的容器。
+单机重建 Caddy 时可能短暂中断连接，不承诺零停机。
+
+成功后删除传输的镜像压缩包，保留已导入镜像和历史配置供手动回滚。
+不会全局执行 docker prune，也不会删除数据库卷。按实际磁盘占用清理确认不用的
+历史发布和对应 nb-hub 镜像。
+
+CI 部署后的手动操作需要同时加载生产配置与该版本的镜像配置。例如：
+
+```bash
+cd /opt/nb-hub
+docker compose --env-file .env.production --env-file current/images.env \
+  -f current/docker-compose.production.yml ps -a
+```
+
+启用了内容域名时再加 `-f current/docker-compose.sites.yml`。
+手动回滚应用使用旧 release 的 Compose 和 images.env，确认与当前数据库兼容后再
+启动；不自动执行 down 迁移。原先在完整仓库中进行的 `make prod-*` 手动部署流程
+保持独立，不能混用旧的 `:local` 标签覆盖 CI 版本。
+
+工作流及部署脚本验证：
+
+```bash
+node --test scripts/deploy-production.test.mjs
+bash -n scripts/deploy-production.sh
+go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/ci-cd.yml
+```
+
+### 复用服务器上已有的 Caddy
+
+已有应用占用 80/443 时，在服务器 `.env.production` 设置
+`NB_HUB_PROXY_MODE=external`。发布脚本会叠加 `docker-compose.external-proxy.yml`，
+API/Web 分别只绑定 `127.0.0.1:18081` 和 `127.0.0.1:18080`，不启动 Caddy 容器。
+可将 `deploy/Caddyfile.host` 中的站点块导入宿主机现有 Caddyfile，先验证配置再 reload。
+该配置目前对应 `hub.hjxgogogo.me`，旧站域名及已有路由保持独立。
+
+外部代理模式下，手动 Compose 命令需叠加
+`-f current/docker-compose.external-proxy.yml`；不要直接启动默认 proxy 服务。
+如果后续启用内容域名，也需在宿主机 Caddy 单独配置内容域名到 API 的路由及证书。
+
+发布包同时包含 PostgreSQL/Caddy 基础镜像，避免阿里云服务器直连 Docker Hub
+失败影响首次上线。SSH 的专用 CI 密钥仅用于此部署，原有运维私钥不上传 GitHub。

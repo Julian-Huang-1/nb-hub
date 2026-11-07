@@ -1,0 +1,13 @@
+# Import this site block from the existing host Caddyfile.
+# Update the hostname if deploying to another server.
+hub.hjxgogogo.me {
+	encode zstd gzip
+	@daemon path /api/daemon /api/daemon/*
+	respond @daemon 403
+	handle /api/* {
+		reverse_proxy 127.0.0.1:18081
+	}
+	handle {
+		reverse_proxy 127.0.0.1:18080
+	}
+}
