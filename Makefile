@@ -2,6 +2,8 @@
 
 .DEFAULT_GOAL := status
 
+.PHONY: sqlc
+
 ENV_FILE ?= .env.development
 DEV = ENV_FILE="$(ENV_FILE)" bash scripts/dev.sh
 PROD = docker compose --env-file .env.production -f docker-compose.production.yml
@@ -38,6 +40,9 @@ db-down:
 
 migrate:
 	$(DEV) sh -c 'cd server && go run ./cmd/migrate'
+
+sqlc:
+	cd server && go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate
 
 db-reset:
 	$(DEV) sh -c 'cd server && go run ./cmd/db-reset --confirm "$$1"' -- "$(CONFIRM)"

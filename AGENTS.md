@@ -34,6 +34,8 @@ nb-hub 是一个多客户端工作区。平台专属 API 应保留在对应应�
 
 ## 数据库与部署
 
+- 登录与令牌规则见 `docs/authentication.md`。Web 使用同源 API、HttpOnly Cookie 和 CSRF；原生端注入安全存储。个人令牌不得换取会话或管理凭据。业务 API 必须挂载后端认证及对应业务授权。
+
 - 本地命令默认使用 `.env.development`；生产 Compose 显式使用 `.env.production`。不要将生产凭据放进开发配置或镜像。
 - 统一开发入口为 `make up/down/status`：默认管理 API 和 Web；down 保留数据库。不要按端口杀死不明进程，或将手动服务当作本命令启动的服务。脚本行为测试使用 `make test-dev-env`。
 - 两套 Compose 的项目名和持久化卷保持独立。数据库迁移放在 `server/migrations`，使用 `make migrate`；生产先执行迁移，成功后启动 API。

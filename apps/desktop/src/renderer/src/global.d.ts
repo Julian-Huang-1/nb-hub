@@ -1,3 +1,3 @@
 interface Window {
-  nbHub: { apiUrl: string };
+  nbHub: { apiUrl: string; authStorage: { get(): Promise<string | null>; set(token: string | null): Promise<void> } };
 }

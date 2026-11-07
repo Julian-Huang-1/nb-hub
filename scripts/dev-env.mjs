@@ -170,10 +170,10 @@ function configuration() {
   if (apiPort === frontendPort || apiPort === Number(databasePort) || frontendPort === Number(databasePort)) {
     throw new Error("API, Web and PostgreSQL must use different ports.");
   }
-  const publicAPI = new URL(process.env.NEXT_PUBLIC_API_URL || api.origin);
+  const publicAPI = new URL(process.env.NB_HUB_API_URL || api.origin);
   if (!["127.0.0.1", "localhost", "[::1]"].includes(publicAPI.hostname) ||
       publicAPI.protocol !== "http:" || Number(publicAPI.port || "80") !== apiPort || publicAPI.pathname !== "/") {
-    throw new Error("NEXT_PUBLIC_API_URL must point at this local API's HTTP port.");
+    throw new Error("NB_HUB_API_URL must point at this local API's HTTP port.");
   }
   const components = (process.env.C || "api,web").split(",");
   if (components.some((name) => !["api", "web"].includes(name))) throw new Error("C supports api,web or api");
@@ -213,6 +213,7 @@ async function start(state, component, desired, command) {
 
 async function up() {
   const desired = configuration();
+  process.env.NB_HUB_API_URL = desired.api.url;
   await lock();
   let state;
   const started = [];

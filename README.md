@@ -1,6 +1,6 @@
 # nb-hub
 
-基于 Multica 架构搭建的多客户端工作区，包含独立的最小实现，尚未包含 Multica 的业务功能。
+基于 Multica 架构搭建的多客户端工作区，独立实现登录、会话和个人访问令牌；尚未引入工作区及任务业务。
 
 ## 目录结构
 
@@ -32,9 +32,9 @@ make down
 
 桌面端、移动端和守护进程仍分别通过 `make dev-desktop`、`make dev-mobile`、`make daemon` 在前台启动；它们不由当前 `up/down` 管理。也可使用 `make api`、`make dev-web` 单独前台调试。开发命令默认加载根目录 `.env.development`，使用 `ENV_FILE=路径` 显式指定另一份开发配置；同一环境的 up/down/status 应使用相同路径。已有 `.env` 不会自动加载。
 
-客户端默认连接 `http://localhost:8080`，可按需设置 `NEXT_PUBLIC_API_URL`、`NB_HUB_API_URL` 或 `EXPO_PUBLIC_API_URL`。真机移动端需要在 `EXPO_PUBLIC_API_URL` 中使用电脑的局域网地址。
+Web 使用同源 `/api`；其服务端通过 `NB_HUB_API_URL` 连接 API。桌面和移动端默认连接 `http://localhost:8080`，分别通过 `NB_HUB_API_URL`、`EXPO_PUBLIC_API_URL` 配置；真机需要电脑的局域网地址。
 
-服务当前提供 `/api/health` 和仅供本机连接的 `/api/daemon/ws`。数据库迁移机制已就绪，尚未添加业务表；sqlc 查询、认证和任务执行将随首个实际业务流程实现。
+`/api/health` 保持公开；`/api/auth/*` 提供登录、会话及个人令牌管理。默认开发示例启用验证码 `888888`，需要先点击发送；已有 `.env.development` 请补入 `NB_HUB_DEV_VERIFICATION_CODE=888888` 后重启。完整配置见[登录与令牌指南](docs/authentication.md)。`/api/daemon/ws` 仍仅供本机连接，尚未迁入工作区或任务鉴权。
 
 本地数据库、生产部署、备份和开发库重置见[部署指南](docs/deployment.md)。
 

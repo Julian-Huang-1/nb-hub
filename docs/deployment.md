@@ -43,7 +43,7 @@ make down
 先 down 再 up。修改 Go 源码后同样需要重启；Web 保留 Next.js 的热更新能力。
 
 配置 `FRONTEND_PORT` 可修改 Web 端口；同时为 E2E 设置对应的 `PLAYWRIGHT_BASE_URL`。
-`NB_HUB_LISTEN_ADDR`、`NEXT_PUBLIC_API_URL` 必须使用匹配的 API 端口。
+`NB_HUB_LISTEN_ADDR`、`NB_HUB_API_URL` 必须使用匹配的 API 端口。
 统一入口仅管理开发用本地 `nbhub_dev`，连接参数必须与当前 Compose 的
 `POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT` 一致。远程库不能通过该入口启动。
 
@@ -84,8 +84,7 @@ make db-reset CONFIRM=nbhub_dev
 ## 数据库迁移
 
 迁移文件放在 `server/migrations`，格式为 `000001_description.up.sql` 和对应
-`.down.sql`。文件被嵌入迁移二进制，具体约定见该目录 README。当前没有业务表，
-空迁移集只验证数据库连接，不创建占位领域模型。
+`.down.sql`。文件被嵌入迁移二进制，具体约定见该目录 README。当前迁移创建认证所需的用户、验证码、会话及个人令牌表，不创建工作区或任务占位模型。
 
 本地运行 `make migrate`。生产 Compose 等待 PostgreSQL 健康后运行迁移服务，
 迁移成功才启动 API。迁移失败会阻止新 API 启动，不会自动强制版本或回滚。
@@ -100,8 +99,7 @@ make db-reset CONFIRM=nbhub_dev
 和数据库均不发布宿主机端口。Caddy 负责 HTTPS，`/api/*` 进入 API，其他请求进入
 Web。尚无认证的 `/api/daemon` 路径在公网入口被拒绝。
 
-生产 Web 镜像将 `NEXT_PUBLIC_API_URL` 编译为空字符串，浏览器使用同源 `/api`。
-不同域名部署无需重建 Web 镜像。当前页面仅展示 API 健康状态，认证和业务功能尚未实现。
+Web 使用同源 `/api`，不同域名部署无需重建 Web 镜像。当前已支持登录、会话及个人令牌管理；生产必须设置独立的 `JWT_SECRET` 并配置邮件或 Google 登录，参见[认证配置](authentication.md)。
 
 服务器需要 Docker Compose、域名解析和可用的 80/443。在阿里云安全组中允许
 HTTP/HTTPS；数据库无须开放 5432。SSH 按自己的运维方式配置。
@@ -114,7 +112,7 @@ HTTP/HTTPS；数据库无须开放 5432。SSH 按自己的运维方式配置。
 make prod-env
 ```
 
-该命令创建权限为 600 的 `.env.production`，生成随机十六进制数据库密码，且拒绝
+该命令创建权限为 600 的 `.env.production`，分别生成随机十六进制数据库密码与 JWT_SECRET，且拒绝
 覆盖已有文件。编辑其中的 `DOMAIN`，例如 `hub.example.com`；默认
 `DEPLOY_PLATFORM=linux/amd64`，若服务器是 ARM 则改为 `linux/arm64`。
 

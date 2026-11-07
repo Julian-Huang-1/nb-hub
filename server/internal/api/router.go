@@ -2,6 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/Julian-Huang-1/nb-hub/server/internal/auth"
+	"github.com/Julian-Huang-1/nb-hub/server/internal/handler"
+	"github.com/Julian-Huang-1/nb-hub/server/internal/middleware"
+	"github.com/Julian-Huang-1/nb-hub/server/internal/service"
 	"log/slog"
 	"net/http"
 	"time"
@@ -17,9 +21,47 @@ type healthResponse struct {
 
 // Router contains HTTP-only transport wiring. Domain handlers can be added as
 // separate packages as the product model is defined.
-func Router(log *slog.Logger) http.Handler {
+func Router(log *slog.Logger, authentication ...*service.Auth) http.Handler {
 	r := chi.NewRouter()
-	r.Use(cors)
+	if len(authentication) > 0 && authentication[0] != nil {
+		s := authentication[0]
+		r.Use(middleware.CORS(s.Config))
+		h := &handler.Auth{Service: s, Log: log, Google: &auth.GoogleProvider{Config: s.Config}}
+		r.Route("/api/auth", func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Cache-Control", "no-store")
+					next.ServeHTTP(w, r)
+				})
+			})
+			r.Get("/config", h.Config)
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.LoginRateLimit())
+				r.Post("/send-code", h.SendCode)
+				r.Post("/verify-code", h.VerifyCode)
+				r.Get("/google/start", h.GoogleStart)
+				r.Get("/google/callback", h.GoogleCallback)
+			})
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.Authenticate(s))
+				r.Get("/me", h.Me)
+				r.Post("/logout", h.Logout)
+				r.Post("/refresh", h.Refresh)
+				r.Get("/sessions", h.Sessions)
+				r.Delete("/sessions/{id}", h.RevokeSession)
+				r.Get("/tokens", h.PATs)
+				r.Post("/tokens", h.CreatePAT)
+				r.Delete("/tokens/{id}", h.RevokePAT)
+			})
+		})
+	} else {
+		r.Use(cors)
+		r.HandleFunc("/api/auth/*", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(503)
+			_ = json.NewEncoder(w).Encode(map[string]string{"code": "auth_unavailable", "error": "Authentication requires a configured database"})
+		})
+	}
 	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(healthResponse{Status: "ok", Service: "nb-hub-api"})

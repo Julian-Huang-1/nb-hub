@@ -3,8 +3,15 @@
     "name": "nb-hub",
     "slug": "nb-hub",
     "scheme": "nbhub",
-    "plugins": ["expo-router"],
-    "ios": { "bundleIdentifier": "com.nbhub.app" },
-    "android": { "package": "com.nbhub.app" }
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.nbhub.app"
+    },
+    "android": {
+      "package": "com.nbhub.app"
+    }
   }
 }

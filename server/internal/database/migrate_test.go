@@ -43,7 +43,7 @@ func TestMigrationsPostgres(t *testing.T) {
 	query := migrationURL.Query()
 	query.Set("pool_max_conns", "4")
 	migrationURL.RawQuery = query.Encode()
-	if err := Migrate(ctx, migrationURL.String()); err != nil {
+	if err := migrateFS(ctx, migrationURL.String(), fstest.MapFS{"README.md": {Data: []byte("No migrations")}}); err != nil {
 		t.Fatalf("empty migration set: %v", err)
 	}
 	files := fstest.MapFS{

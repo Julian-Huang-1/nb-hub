@@ -1,8 +1,9 @@
 # Database migrations
 
-Add sequential pairs such as `000001_create_example.up.sql` and
-`000001_create_example.down.sql` when the first persisted product workflow exists.
-No business tables are created by this scaffold.
+Migrations 000001–000003 create users, email verification codes, interactive
+sessions, personal access tokens and their owner indexes. Add sequential pairs
+such as `000004_description.up.sql` and `000004_description.down.sql` for later
+changes. No workspace or task tables are created.
 
 Files are embedded in the migrator binary. `make migrate` applies pending up
 migrations; production Compose runs the same binary before starting the API.

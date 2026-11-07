@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./auth": "./src/auth.ts",
     "./api": "./src/api.ts",
     "./health": "./src/health.ts",
     "./types": "./src/types.ts"

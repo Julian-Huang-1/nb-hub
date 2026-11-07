@@ -60,7 +60,7 @@ Playwright 默认不启动服务，使用一个 Chromium 工作进程，不自�
 
 完成后执行 `make down` 停止受管理应用，数据库和数据保留。生命周期脚本测试可单独运行 `make test-dev-env`；用临时目录、假 Docker/Go/pnpm 和真实临时 HTTP 进程验证身份检查、幂等启动、失败清理及端口占用保护，不连接用户数据库。
 
-测试通过 `TestApiClient` 检查真实 API，不依赖应用构建产物。当前健康检查不写数据，无需数据库或清理操作；后续有数据写入时，在客户端增加准备和清理方法，不直接在测试中操作数据库。
+测试通过 `TestApiClient` 检查真实 API，不依赖应用构建产物。首页现在需要登录；TestApiClient 通过真实认证 API 准备登录并在测试后撤销会话，不直接操作数据库。E2E 会创建随机邮箱用户，建议使用一次性开发测试库；配置 `NB_HUB_DEV_VERIFICATION_CODE`，且与被测 API 一致。不要将固定开发验证码用于生产。
 
 ### 环境变量
 
@@ -70,10 +70,11 @@ Playwright 默认不启动服务，使用一个 Chromium 工作进程，不自�
 | --- | --- |
 | `PLAYWRIGHT_BASE_URL` | 测试页面地址；其次取 `FRONTEND_ORIGIN`，默认 `http://localhost:3000` |
 | `E2E_API_URL` | 测试 API 地址；其次取 `NEXT_PUBLIC_API_URL`，默认 `http://localhost:8080` |
-| `NEXT_PUBLIC_API_URL` | Web 客户端的 API 地址，必须与 E2E API 地址一致 |
+| `NEXT_PUBLIC_API_URL` | 历史 API 测试地址回退；Web 已使用同源 `/api` |
+| `NB_HUB_DEV_VERIFICATION_CODE` | E2E 登录所用的固定开发验证码，必须与 API 一致 |
 | `NB_HUB_LISTEN_ADDR` | Go 服务监听地址，默认 `127.0.0.1:8080` |
 
-使用自定义端口时，在 `.env.development` 中设置 `NB_HUB_LISTEN_ADDR` 和匹配的 `NEXT_PUBLIC_API_URL`，并为测试设置匹配的 `PLAYWRIGHT_BASE_URL` 和 `E2E_API_URL`。生产构建中的客户端地址在构建时写入，修改后需重新构建。
+使用自定义端口时，在 `.env.development` 中设置 `NB_HUB_LISTEN_ADDR` 和对应的 `NB_HUB_API_URL`（供 Web 服务端代理），并为测试设置匹配的 `PLAYWRIGHT_BASE_URL` 和 `E2E_API_URL`。Web 客户端使用同源地址。
 
 通过生产反向代理测试时，将 `PLAYWRIGHT_BASE_URL` 和 `E2E_API_URL` 都设为站点地址；生产镜像的 Web 使用同源 `/api`。
 

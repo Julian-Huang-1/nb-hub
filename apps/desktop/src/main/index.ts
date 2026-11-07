@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
+import { getAuthToken, setAuthToken } from "./auth-storage";
 import { join } from "node:path";
 
 function createWindow() {
@@ -12,6 +13,9 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
+  window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  window.webContents.on("will-navigate", (event) => event.preventDefault());
+  window.webContents.on("will-redirect", (event) => event.preventDefault());
 
   if (process.env.ELECTRON_RENDERER_URL) {
     void window.loadURL(process.env.ELECTRON_RENDERER_URL);
@@ -21,6 +25,11 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const assertSender = (event: Electron.IpcMainInvokeEvent) => {
+    if (!event.senderFrame || event.senderFrame !== event.sender.mainFrame || !BrowserWindow.fromWebContents(event.sender)) throw new Error("Untrusted token storage request");
+  };
+  ipcMain.handle("auth:get-token", async (event) => { assertSender(event); return getAuthToken(); });
+  ipcMain.handle("auth:set-token", async (event, token: string | null) => { assertSender(event); await setAuthToken(token); });
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

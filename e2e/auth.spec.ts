@@ -1,0 +1,32 @@
+import { randomUUID } from "node:crypto";
+import { test, expect } from "./fixtures";
+
+test("验证码登录、个人令牌创建撤销、退出及刷新后保持退出", async ({ page }, info) => {
+  const code = process.env.NB_HUB_DEV_VERIFICATION_CODE;
+  if (!code) throw new Error("Configure NB_HUB_DEV_VERIFICATION_CODE on the explicit development API");
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Sign in to nb-hub" })).toBeVisible();
+  await page.screenshot({ path: info.outputPath("login.png"), fullPage: true });
+  const email = `e2e-${randomUUID()}@example.com`;
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByRole("button", { name: "Send code", exact: true }).click();
+  await expect(page.getByText(`Code sent to ${email}`)).toBeVisible();
+  await page.getByLabel("Verification code").fill(code);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByText(email, { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(email, { exact: true })).toBeVisible();
+  await page.getByLabel("Token name").fill("E2E CLI");
+  await page.getByRole("button", { name: "Create token", exact: true }).click();
+  const token = await page.getByLabel("New personal access token").inputValue();
+  expect(token).toMatch(/^nbp_[a-f0-9]{64}$/);
+  await page.getByRole("button", { name: "Dismiss token" }).click();
+  await expect(page.getByLabel("New personal access token")).toHaveCount(0);
+  await page.getByRole("button", { name: "Revoke token E2E CLI" }).click();
+  await expect(page.getByRole("button", { name: "Revoke token E2E CLI" })).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath("account.png"), fullPage: true });
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Sign in to nb-hub" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Sign in to nb-hub" })).toBeVisible();
+});
