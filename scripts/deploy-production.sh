@@ -56,7 +56,7 @@ gzip -dc "$deploy_release/images.tar.gz" | docker load
 
 # Keep the old application alive while applying compatible migrations. Migration
 # errors stop this script before application containers are replaced.
-"${deploy_compose[@]}" run --rm --no-deps migrate
+"${deploy_compose[@]}" run --rm --no-deps migrate < /dev/null
 "${deploy_compose[@]}" up -d --no-build --no-deps --wait --wait-timeout 120 api web
 if [[ "$deploy_proxy_mode" == bundled ]]; then
   "${deploy_compose[@]}" up -d --no-build --no-deps --force-recreate proxy
@@ -80,6 +80,6 @@ done
 ln -sfn "$deploy_release" "$deploy_root/current"
 printf '%s\n' "$deploy_sha" > "$deploy_release/commit-sha"
 # Image archives are expensive on a 2GB host; imported images and config remain.
-rm -f "$deploy_release/images.tar.gz" "$deploy_archive"
+rm -f "$deploy_release/images.tar.gz" "$deploy_archive" "$deploy_root/incoming/$deploy_id/deploy-production.sh"
 rmdir "$deploy_root/incoming/$deploy_id"
 echo "Deployed commit $deploy_sha"

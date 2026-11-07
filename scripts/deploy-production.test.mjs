@@ -38,6 +38,7 @@ function fixture(t, { sites = false, failure = '', external = false } = {}) {
 set -e
 printf '%s\\n' "$*" >> "$TEST_LOG"
 if [[ "$1" == load ]]; then cat > /dev/null; fi
+if [[ "$*" == *'run --rm --no-deps migrate'* ]]; then cat > /dev/null; fi
 if [[ "$*" == *'run --rm --no-deps migrate'* && "$FAIL_STAGE" == migration ]]; then exit 20; fi
 if [[ "$*" == *'up -d --no-build --no-deps --wait'* && "$FAIL_STAGE" == application ]]; then exit 21; fi
 `, { mode: 0o700 });
@@ -51,6 +52,10 @@ if [[ "$*" == *'up -d --no-build --no-deps --wait'* && "$FAIL_STAGE" == applicat
     release: path.join(root, 'releases', releaseID),
     run: () => spawnSync('bash', [script, root, releaseID, sha, 'linux/amd64'], {
       encoding: 'utf8',
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TEST_LOG: log, FAIL_STAGE: failure },
+    }),
+    runViaStdin: () => spawnSync('bash', ['-s', '--', root, releaseID, sha, 'linux/amd64'], {
+      encoding: 'utf8', input: readFileSync(script, 'utf8'),
       env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TEST_LOG: log, FAIL_STAGE: failure },
     }),
     calls: () => readFileSync(log, 'utf8'),
@@ -115,4 +120,12 @@ test('external proxy mode binds only app ports and preserves the host proxy', (t
   assert.equal(result.status, 0, result.stderr);
   assert.match(f.calls(), /docker-compose.external-proxy.yml/);
   assert.doesNotMatch(f.calls(), /force-recreate proxy/);
+});
+
+test('migration cannot consume the SSH script stdin and skip application startup', (t) => {
+  const f = fixture(t);
+  const result = f.runViaStdin();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(existsSync(path.join(f.root, 'current', 'commit-sha')), true);
+  assert.match(f.calls(), /up -d --no-build --no-deps --wait/);
 });
