@@ -84,7 +84,7 @@ make db-reset CONFIRM=nbhub_dev
 ## 数据库迁移
 
 迁移文件放在 `server/migrations`，格式为 `000001_description.up.sql` 和对应
-`.down.sql`。文件被嵌入迁移二进制，具体约定见该目录 README。当前迁移创建认证所需的用户、验证码、会话及个人令牌表，不创建工作区或任务占位模型。
+`.down.sql`。文件被嵌入迁移二进制，具体约定见该目录 README。当前迁移创建认证所需的用户、验证码、会话及个人令牌表，以及静态站点、部署任务与内容访问凭据；不创建工作区或任务占位模型。
 
 本地运行 `make migrate`。生产 Compose 等待 PostgreSQL 健康后运行迁移服务，
 迁移成功才启动 API。迁移失败会阻止新 API 启动，不会自动强制版本或回滚。
@@ -177,3 +177,9 @@ NB_HUB_TEST_DATABASE_URL='postgres://user:password@127.0.0.1:5432/nbhub_test_mig
 
 测试验证空迁移集、迁移重放、失败后的脏版本阻断，并清理自己的探针表与迁移记录。
 不要指向已有业务数据库。
+
+## 静态 HTML 托管
+
+站点文件使用独立 `sites_data` 卷，API 内运行单并发发布 Worker。生产默认未启用，
+设置独立内容主域并使用 `docker-compose.sites.yml` 后开放内容入口。通配 DNS、
+TLS 证书、配额、文件备份及 CLI 操作见[静态站点指南](static-sites.md)。

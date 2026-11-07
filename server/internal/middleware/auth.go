@@ -94,8 +94,8 @@ func CORS(cfg auth.Config) func(http.Handler) http.Handler {
 				if origin != "null" {
 					w.Header().Set("Access-Control-Allow-Credentials", "true")
 				}
-				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token, X-Auth-Mode")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token, X-Auth-Mode, Idempotency-Key")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, POST, PATCH, PUT, DELETE, OPTIONS")
 			}
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(204)

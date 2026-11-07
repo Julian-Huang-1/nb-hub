@@ -1,15 +1,20 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Julian-Huang-1/nb-hub/server/internal/daemon"
+	"github.com/Julian-Huang-1/nb-hub/server/internal/sitecli"
 	"github.com/spf13/cobra"
 )
 
 func main() {
 	root := &cobra.Command{Use: "nb-hub", Short: "nb-hub command line"}
+	sitecli.AddCommands(root)
 	root.AddCommand(&cobra.Command{
 		Use:   "daemon",
 		Short: "Connect the local runtime to the API",
@@ -21,7 +26,9 @@ func main() {
 			return daemon.Run(cmd.Context(), apiURL, slog.Default())
 		},
 	})
-	if err := root.Execute(); err != nil {
-		os.Exit(1)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := root.ExecuteContext(ctx); err != nil {
+		os.Exit(sitecli.ExitCode(err))
 	}
 }

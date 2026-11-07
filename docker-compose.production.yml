@@ -24,6 +24,10 @@ x-api: &api
     GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+    NB_HUB_SITES_ROOT: /var/lib/nb-hub/sites
+    NB_HUB_CONTENT_DOMAIN: ${NB_HUB_CONTENT_DOMAIN:-}
+    NB_HUB_SITES_OWNER_QUOTA_BYTES: ${NB_HUB_SITES_OWNER_QUOTA_BYTES:-1073741824}
+    NB_HUB_SITES_TOTAL_QUOTA_BYTES: ${NB_HUB_SITES_TOTAL_QUOTA_BYTES:-5368709120}
     NB_HUB_LISTEN_ADDR: 0.0.0.0:8080
     DATABASE_URL: postgres://nbhub_prod:${POSTGRES_PASSWORD:?Run make prod-env first}@postgres:5432/nbhub_prod?sslmode=disable&pool_max_conns=4
 
@@ -53,6 +57,8 @@ services:
 
   api:
     <<: *api
+    volumes:
+      - sites_data:/var/lib/nb-hub/sites
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -95,6 +101,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  sites_data:
   postgres_data:
   caddy_data:
   caddy_config:

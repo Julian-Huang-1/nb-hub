@@ -1,9 +1,10 @@
 # Database migrations
 
 Migrations 000001–000003 create users, email verification codes, interactive
-sessions, personal access tokens and their owner indexes. Add sequential pairs
-such as `000004_description.up.sql` and `000004_description.down.sql` for later
-changes. No workspace or task tables are created.
+sessions, personal access tokens and their owner indexes. Migration 000004 adds
+static sites, immutable deployment records, durable jobs and content access
+credentials. Add sequential pairs such as `000005_description.up.sql` and
+`000005_description.down.sql` for later changes. No workspace or task tables are created.
 
 Files are embedded in the migrator binary. `make migrate` applies pending up
 migrations; production Compose runs the same binary before starting the API.

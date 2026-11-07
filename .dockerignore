@@ -12,3 +12,5 @@ test-results
 playwright-report
 backups
 .nb-hub
+**/.nb-hub
+deploy/content-tls

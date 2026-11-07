@@ -1,0 +1,8 @@
+# Optional overlay: use together with docker-compose.production.yml.
+services:
+  proxy:
+    environment:
+      NB_HUB_CONTENT_DOMAIN: ${NB_HUB_CONTENT_DOMAIN:?Set a separate content domain}
+    volumes:
+      - ./deploy/Caddyfile.sites:/etc/caddy/Caddyfile:ro
+      - ./deploy/content-tls:/etc/caddy/content-tls:ro

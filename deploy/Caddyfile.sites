@@ -1,0 +1,18 @@
+{$DOMAIN} {
+	encode zstd gzip
+	@daemon path /api/daemon /api/daemon/*
+	respond @daemon 403
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+*.{$NB_HUB_CONTENT_DOMAIN} {
+	# Supply a wildcard certificate for the separate content domain.
+	tls /etc/caddy/content-tls/fullchain.pem /etc/caddy/content-tls/privkey.pem
+	encode zstd gzip
+	reverse_proxy api:8080
+}

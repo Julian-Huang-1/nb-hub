@@ -1,6 +1,6 @@
 # nb-hub
 
-基于 Multica 架构搭建的多客户端工作区，独立实现登录、会话和个人访问令牌；尚未引入工作区及任务业务。
+基于 Multica 架构搭建的多客户端工作区，独立实现登录、会话和个人访问令牌；提供静态 HTML/ZIP 站点部署 API 与 CLI；尚未引入工作区及任务业务。
 
 ## 目录结构
 
@@ -37,6 +37,12 @@ Web 使用同源 `/api`；其服务端通过 `NB_HUB_API_URL` 连接 API。桌�
 `/api/health` 保持公开；`/api/auth/*` 提供登录、会话及个人令牌管理。默认开发示例启用验证码 `888888`，需要先点击发送；已有 `.env.development` 请补入 `NB_HUB_DEV_VERIFICATION_CODE=888888` 后重启。完整配置见[登录与令牌指南](docs/authentication.md)。`/api/daemon/ws` 仍仅供本机连接，尚未迁入工作区或任务鉴权。
 
 本地数据库、生产部署、备份和开发库重置见[部署指南](docs/deployment.md)。
+
+## 静态站点部署
+
+支持本地磁盘托管、公开/私有访问、版本发布与回滚，以及 `nb-hub site`、
+`nb-hub deploy`、`nb-hub deployment` 命令。当前仅实现服务端和 CLI，
+配置、API、生产内容域名和测试方式见[静态站点指南](docs/static-sites.md)。
 
 ## UI 与图标
 

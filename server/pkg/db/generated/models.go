@@ -28,6 +28,29 @@ type AuthSession struct {
 	RevokedAt pgtype.Timestamptz `json:"revoked_at"`
 }
 
+type Deployment struct {
+	ID             uuid.UUID   `json:"id"`
+	SiteID         uuid.UUID   `json:"site_id"`
+	Status         string      `json:"status"`
+	Format         string      `json:"format"`
+	Entrypoint     string      `json:"entrypoint"`
+	Message        string      `json:"message"`
+	ContentHash    string      `json:"content_hash"`
+	IdempotencyKey pgtype.Text `json:"idempotency_key"`
+	StorageBytes   int64       `json:"storage_bytes"`
+	ErrorCode      string      `json:"error_code"`
+	CreatedAt      time.Time   `json:"created_at"`
+	UpdatedAt      time.Time   `json:"updated_at"`
+}
+
+type DeploymentJob struct {
+	DeploymentID uuid.UUID   `json:"deployment_id"`
+	Attempts     int32       `json:"attempts"`
+	LeaseUntil   time.Time   `json:"lease_until"`
+	LeaseID      pgtype.UUID `json:"lease_id"`
+	Done         bool        `json:"done"`
+}
+
 type LoginCode struct {
 	Email     string    `json:"email"`
 	CodeHash  []byte    `json:"code_hash"`
@@ -46,4 +69,32 @@ type PersonalAccessToken struct {
 	ExpiresAt   time.Time          `json:"expires_at"`
 	LastUsedAt  pgtype.Timestamptz `json:"last_used_at"`
 	RevokedAt   pgtype.Timestamptz `json:"revoked_at"`
+}
+
+type Site struct {
+	ID                  uuid.UUID          `json:"id"`
+	OwnerID             uuid.UUID          `json:"owner_id"`
+	Name                string             `json:"name"`
+	Visibility          string             `json:"visibility"`
+	RoutingMode         string             `json:"routing_mode"`
+	CurrentDeploymentID pgtype.UUID        `json:"current_deployment_id"`
+	Revision            int64              `json:"revision"`
+	CreatedAt           time.Time          `json:"created_at"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type SiteAccessTicket struct {
+	TokenHash []byte    `json:"token_hash"`
+	SiteID    uuid.UUID `json:"site_id"`
+	SessionID uuid.UUID `json:"session_id"`
+	Hostname  string    `json:"hostname"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+type SiteContentSession struct {
+	TokenHash []byte    `json:"token_hash"`
+	SiteID    uuid.UUID `json:"site_id"`
+	SessionID uuid.UUID `json:"session_id"`
+	Hostname  string    `json:"hostname"`
+	ExpiresAt time.Time `json:"expires_at"`
 }

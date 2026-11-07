@@ -9,7 +9,7 @@ Mobile (Expo) ────────┘                           │
                                            Local Go daemon ── AI CLI
 ```
 
-The present scaffold connects each client to `/api/health` and connects the daemon to `/api/daemon/ws`. It does not yet implement users, workspaces, issues, task claims or AI execution.
+The clients connect to the Go API for health and authentication; the CLI also manages static site deployments. The daemon connects to `/api/daemon/ws`. Workspaces, issues, task claims and AI execution are not implemented.
 
 ## Frontend ownership
 
@@ -34,3 +34,13 @@ The present scaffold connects each client to `/api/health` and connects the daem
 - `server/pkg/agent`: adapters for individual AI CLIs.
 
 PostgreSQL will be the authority for business state. A WebSocket wakeup will never be the only source of queued work. Redis can be added for multiple API instances when needed, matching Multica's optional relay role.
+
+## Static site hosting
+
+The API process also runs a single deployment worker and a content-host gateway.
+Management requests follow middleware → handler → service → sqlc → PostgreSQL.
+Uploads reserve storage quota before streaming to disk; durable PostgreSQL jobs
+validate/extract files into immutable local releases. Publishing and rollback
+transactionally change the site pointer with an expected revision. Uploaded content
+is served on a separate registrable domain and never routed to management APIs.
+See [static sites](static-sites.md) for permissions, CLI and deployment details.
