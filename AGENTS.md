@@ -32,6 +32,14 @@ nb-hub 是一个多客户端工作区。平台专属 API 应保留在对应应�
 
 引入首批领域功能时，HTTP 请求应依次经过路由、中间件、处理器、服务、sqlc 查询和 PostgreSQL。面向用户的实时连接与守护进程连接应分离。产品行为尚未确定前，不要添加占位领域模型。
 
+## 数据库与部署
+
+- 本地命令默认使用 `.env.development`；生产 Compose 显式使用 `.env.production`。不要将生产凭据放进开发配置或镜像。
+- 统一开发入口为 `make up/down/status`：默认管理 API 和 Web；down 保留数据库。不要按端口杀死不明进程，或将手动服务当作本命令启动的服务。脚本行为测试使用 `make test-dev-env`。
+- 两套 Compose 的项目名和持久化卷保持独立。数据库迁移放在 `server/migrations`，使用 `make migrate`；生产先执行迁移，成功后启动 API。
+- 开发库重置只允许 `APP_ENV=development`、字面量回环地址和 `nbhub_dev`，必须显式传入 `CONFIRM=nbhub_dev`。不要放宽这些限制来处理生产库。
+- 操作命令、部署、备份和数据库集成测试见 `docs/deployment.md`。
+
 ## 测试
 
 - 单测与实现相邻：共享逻辑放 core，基础组件放 ui，共享业务组件放 views，平台接线放对应应用；E2E 放 `e2e/`。不要在应用测试中重复验证共享包行为。
@@ -39,5 +47,5 @@ nb-hub 是一个多客户端工作区。平台专属 API 应保留在对应应�
 - 组件测试使用真实 QueryClient，并在 API 客户端边界模拟请求；关闭查询自动重试，测试后清理客户端和 DOM。按需补充浏览器 API 模拟，不要预置与当前功能无关的桩。
 - E2E 使用 Playwright 和 `TestApiClient`，验证真实前后端联通；新增数据准备和清理操作放入该客户端。不要搬入尚不存在的认证、工作区或任务模型。
 - 默认测试不得解析或执行用户安装的智能体 CLI，不得访问真实智能体账户。
-- `pnpm test` 运行 Web/桌面及共享包单测；`pnpm test:coverage` 生成共享包覆盖率；`make test` 运行类型检查、前端单测和 Go 测试。原生移动端测试独立配置。
+- `pnpm test` 运行 Web/桌面及共享包单测；`pnpm test:coverage` 生成共享包覆盖率；`make test` 运行类型检查、前端单测、开发环境生命周期测试和 Go 测试。原生移动端测试独立配置。
 - E2E 前显式启动 API 和 Web，再运行 `pnpm test:e2e`；测试不自动启动或复用不明服务。环境变量、调试命令和报告路径见 `docs/testing.md`。

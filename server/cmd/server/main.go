@@ -15,6 +15,10 @@ import (
 
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	if os.Getenv("APP_ENV") == "production" && os.Getenv("DATABASE_URL") == "" {
+		log.Error("DATABASE_URL is required in production")
+		os.Exit(1)
+	}
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
 		pool, err := database.Open(context.Background(), databaseURL)
 		if err != nil {

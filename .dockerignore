@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/.next
+**/out
+**/dist
+**/.expo
+**/*.tsbuildinfo
+.env*
+**/.env*
+coverage
+test-results
+playwright-report
+backups
+.nb-hub

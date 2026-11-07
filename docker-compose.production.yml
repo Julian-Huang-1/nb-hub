@@ -1,0 +1,83 @@
+name: nb-hub-prod
+
+x-api: &api
+  image: ${API_IMAGE:-nb-hub-api:local}
+  platform: ${DEPLOY_PLATFORM:-linux/amd64}
+  build:
+    context: .
+    dockerfile: Dockerfile.api
+  environment:
+    APP_ENV: production
+    NB_HUB_LISTEN_ADDR: 0.0.0.0:8080
+    DATABASE_URL: postgres://nbhub_prod:${POSTGRES_PASSWORD:?Run make prod-env first}@postgres:5432/nbhub_prod?sslmode=disable&pool_max_conns=4
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: nbhub_prod
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run make prod-env first}
+      POSTGRES_DB: nbhub_prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *api
+    command: ["/app/migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *api
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    image: ${WEB_IMAGE:-nb-hub-web:local}
+    platform: ${DEPLOY_PLATFORM:-linux/amd64}
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

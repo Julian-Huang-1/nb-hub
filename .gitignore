@@ -7,6 +7,10 @@ dist/
 .env
 .env.local
 .env.worktree
+.env.development
+.env.production
+backups/
+.nb-hub/
 coverage/
 .vitest/
 test-results/

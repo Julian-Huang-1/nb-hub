@@ -1,0 +1,12 @@
+{$DOMAIN} {
+	encode zstd gzip
+	# Daemon authentication is not implemented; keep this endpoint private.
+	@daemon path /api/daemon /api/daemon/*
+	respond @daemon 403
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
