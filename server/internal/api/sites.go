@@ -17,6 +17,14 @@ func RouterWithSites(log *slog.Logger, authentication *service.Auth, sites *serv
 	}
 	r := base.(*chi.Mux)
 	h := &handler.Sites{Service: sites, Log: log}
+	r.Get("/internal/sites/tls-allow", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		if !isLoopback(r.RemoteAddr) {
+			http.Error(w, "loopback only", http.StatusForbidden)
+			return
+		}
+		h.AllowContentTLS(w, r)
+	})
 	r.Route("/api/v1/sites", func(r chi.Router) {
 		r.Use(middleware.Authenticate(authentication))
 		r.Use(func(next http.Handler) http.Handler {

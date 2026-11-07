@@ -17,8 +17,10 @@ Go 进程中运行，文件保存在本地持久化目录。不运行上传代�
 - `NB_HUB_SITES_TOTAL_QUOTA_BYTES`：所有用户共享的部署存储配额，默认 5 GiB。
 
 生产环境未设置内容域名时保留原有后台行为，不启用站点接口或 Worker。
-设置后要求内容域名与 `FRONTEND_ORIGIN` 使用不同的可注册主域，防止上传页面
-与管理后台共享站点上下文。每个站点和每个预览版本使用独立 hostname：
+内容域名与 `FRONTEND_ORIGIN` 必须使用不同且互不包含的 hostname。
+支持同一主域下的兄弟域名，例如后台 `hub.example.com`、内容 `site.example.com`；
+生产的会话、CSRF、OAuth state 及内容 Cookie 使用 `__Host-` 前缀，不能设置 Domain。
+管理 API 仍执行严格 Origin、CSRF 和资源归属校验。每个站点和预览版本使用独立 hostname：
 
 ```text
 s<32 位 site UUID>.内容域名       正式站点
@@ -157,7 +159,7 @@ CSS、图片和条件请求。网关不接受管理端 Cookie 或 Bearer 作为�
 主 Compose 为 API 增加独立 `sites_data` 卷；镜像为 UID 10001 准备可写目录。
 启用内容访问时：
 
-1. 在 `.env.production` 设置不同主域的 `NB_HUB_CONTENT_DOMAIN`，例如
+1. 在生产配置中设置独立内容 hostname 的 `NB_HUB_CONTENT_DOMAIN`（不含 `*.`），例如
    `usercontent.example.net`；将 `*.usercontent.example.net` 解析到服务器。
 2. 将该通配域名的证书链与私钥分别放到 `deploy/content-tls/fullchain.pem` 和
    `deploy/content-tls/privkey.pem`。此目录已忽略，私钥只通过私有通道传输。
@@ -191,3 +193,17 @@ NB_HUB_SITES_TEST_DATABASE_URL='postgres://.../nbhub_test_sites?sslmode=disable'
 
 库名必须以 `nbhub_test_` 开头。测试执行全部迁移、创建随机用户并清理自己的记录；
 不连接真实智能体、邮件或第三方账户。
+
+## 宿主机 Caddy 按站点签发证书
+
+外部代理模式可在 `PRODUCTION_ENV` 设置 `NB_HUB_CONTENT_DOMAIN=site.hjxgogogo.me`。
+DNS 添加 `*.site` 的 A 记录指向服务器；后台仍使用 `hub.hjxgogogo.me`。
+`deploy/Caddyfile.host` 提供内容路由及 on-demand TLS 配置示例：
+在宿主机 Caddy 的全局 `{ }` 中添加 `on_demand_tls` 的 ask URL，
+内容域名块启用 `tls { on_demand }`。新站点首次 HTTPS 请求会申请该 hostname 的
+证书，不需要云 DNS 插件；大规模使用时可改为预先配置通配证书以减少签发次数。
+
+准入地址为 `http://127.0.0.1:18081/internal/sites/tls-allow?domain=...`，只接受
+回环来源，公开后台入口拒绝 `/internal/*`。服务端仅允许有效站点和就绪预览版本
+对应的 hostname；未知、已删除、其他域名均拒绝，避免为任意通配名称申请证书。
+宿主 Caddy 需要先通过配置校验再 reload，现有站点路由保持不变。

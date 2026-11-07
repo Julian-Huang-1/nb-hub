@@ -1,13 +1,27 @@
-# Import this site block from the existing host Caddyfile.
-# Update the hostname if deploying to another server.
+# Add the following global option to the existing host Caddyfile's { } block:
+# on_demand_tls {
+#     ask http://127.0.0.1:18081/internal/sites/tls-allow
+# }
+# Import these site blocks while preserving existing applications.
 hub.hjxgogogo.me {
 	encode zstd gzip
-	@daemon path /api/daemon /api/daemon/*
-	respond @daemon 403
+	header Content-Security-Policy "frame-ancestors 'self'"
+	@private path /api/daemon /api/daemon/* /internal /internal/*
+	respond @private 403
 	handle /api/* {
 		reverse_proxy 127.0.0.1:18081
 	}
 	handle {
 		reverse_proxy 127.0.0.1:18080
+	}
+}
+
+https://*.site.hjxgogogo.me {
+	tls {
+		on_demand
+	}
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:18081 {
+		header_up Host {host}
 	}
 }

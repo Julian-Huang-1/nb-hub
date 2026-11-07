@@ -35,7 +35,7 @@ export function createAuthClient(baseURL: string, options: AuthClientOptions) {
       sentToken = await options.storage!.get();
       if (sentToken) headers.Authorization = `Bearer ${sentToken}`;
     } else if (method !== "GET") {
-      const csrf = options.readCookie?.("nbhub_csrf");
+      const csrf = options.readCookie?.("__Host-nbhub_csrf") ?? options.readCookie?.("nbhub_csrf");
       if (csrf) headers["X-CSRF-Token"] = csrf;
     }
     const response = await fetch(`${base}/api/auth/${path}`, { method, headers, credentials: options.mode === "cookie" ? "include" : "omit", ...(body === undefined ? {} : { body: JSON.stringify(body) }) });

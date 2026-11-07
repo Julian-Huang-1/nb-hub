@@ -12,6 +12,20 @@ describe("authentication transport", () => {
     await client.createToken("CLI", 1);
     expect(fetch).toHaveBeenCalledWith("/api/auth/tokens", expect.objectContaining({ method: "POST", credentials: "include", headers: expect.objectContaining({ "X-CSRF-Token": "csrf-value" }) }));
   });
+  it("prefers the protected production CSRF cookie over sibling-domain cookies", async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetch);
+    const client = createAuthClient("", { mode: "cookie", readCookie: (name) => name === "__Host-nbhub_csrf" ? "protected" : "injected" });
+    await client.logout();
+    expect(fetch).toHaveBeenCalledWith("/api/auth/logout", expect.objectContaining({ headers: expect.objectContaining({ "X-CSRF-Token": "protected" }) }));
+  });
+  it("retains the unprefixed CSRF cookie for local development", async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetch);
+    const client = createAuthClient("", { mode: "cookie", readCookie: (name) => name === "nbhub_csrf" ? "local" : null });
+    await client.logout();
+    expect(fetch).toHaveBeenCalledWith("/api/auth/logout", expect.objectContaining({ headers: expect.objectContaining({ "X-CSRF-Token": "local" }) }));
+  });
   it("persists and renews bearer sessions through platform storage", async () => {
     let token: string | null = null;
     const storage = { get: vi.fn(async () => token), set: vi.fn(async (value: string | null) => { token = value; }) };

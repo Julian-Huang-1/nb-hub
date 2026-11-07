@@ -71,17 +71,17 @@ func (c SitesConfig) Validate(frontend string, production bool) error {
 	fh := strings.ToLower(f.Hostname())
 	// The default development hosts are localhost and sites.localhost. Permit
 	// that loopback-only pairing while retaining hostname isolation and the
-	// stricter registrable-domain boundary in production.
+	// HTTPS requirements in production. Session cookies use __Host- in production.
 	managementIP := net.ParseIP(fh)
 	localDevelopment := !production && (fh == "localhost" || managementIP != nil && managementIP.IsLoopback()) && strings.HasSuffix(host, ".localhost")
 	if fh == host || !localDevelopment && (strings.HasSuffix(fh, "."+host) || strings.HasSuffix(host, "."+fh)) {
 		return fmt.Errorf("content domain must be separate from the management domain")
 	}
 	if production {
-		managementRoot, e1 := publicsuffix.EffectiveTLDPlusOne(fh)
-		contentRoot, e2 := publicsuffix.EffectiveTLDPlusOne(host)
-		if e1 != nil || e2 != nil || managementRoot == contentRoot {
-			return fmt.Errorf("production content must use a different registrable domain")
+		_, e1 := publicsuffix.EffectiveTLDPlusOne(fh)
+		_, e2 := publicsuffix.EffectiveTLDPlusOne(host)
+		if e1 != nil || e2 != nil {
+			return fmt.Errorf("production hosts must use valid registrable domains")
 		}
 	}
 	if production && c.Scheme != "https" {

@@ -29,7 +29,7 @@ func Authenticate(s *service.Auth) func(http.Handler) http.Handler {
 			for _, name := range []string{"X-User-ID", "X-User-Email", "X-Agent-ID", "X-Task-ID", "X-Actor-Source"} {
 				r.Header.Del(name)
 			}
-			token, fromCookie := auth.Extract(r)
+			token, fromCookie := auth.Extract(r, s.Config.Production)
 			if token == "" {
 				reject(w, 401, "unauthorized", "Sign in to continue")
 				return
@@ -47,7 +47,7 @@ func Authenticate(s *service.Auth) func(http.Handler) http.Handler {
 				reject(w, 401, "unauthorized", "Cookies require an interactive session")
 				return
 			}
-			if fromCookie && !auth.ValidateCSRF(r, s.Config.Secret, identity.SessionID) {
+			if fromCookie && !auth.ValidateCSRF(r, s.Config.Secret, identity.SessionID, s.Config.Production) {
 				reject(w, 403, "csrf_failed", "CSRF validation failed")
 				return
 			}
@@ -81,7 +81,7 @@ func CORS(cfg auth.Config) func(http.Handler) http.Handler {
 					machine = machine || strings.Contains(headers, "authorization") || strings.Contains(headers, "x-auth-mode")
 				}
 				if origin == "null" && machine {
-					if _, err := r.Cookie(auth.CookieName); err != nil {
+					if _, err := r.Cookie(auth.SessionCookieName(cfg.Production)); err != nil {
 						allowed = true
 					}
 				}

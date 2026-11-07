@@ -33,7 +33,7 @@ func TestSitesDevelopmentIsolation(t *testing.T) {
 }
 
 func TestContentDomainIsolation(t *testing.T) {
-	for _, domain := range []string{"hub.example.com", "files.example.com", "example.com", "nested.hub.example.com", "https://files.example.net", "files.example.net/path", "*.example.net", "files.example.net?x=1"} {
+	for _, domain := range []string{"hub.example.com", "example.com", "nested.hub.example.com", "https://files.example.net", "files.example.net/path", "*.example.net", "files.example.net?x=1"} {
 		t.Run(domain, func(t *testing.T) {
 			c := SitesConfig{Domain: domain, Scheme: "https"}
 			if err := c.Validate("https://hub.example.com", true); err == nil {
@@ -41,7 +41,9 @@ func TestContentDomainIsolation(t *testing.T) {
 			}
 		})
 	}
-	if err := (SitesConfig{Domain: "files.example.net", Scheme: "https"}).Validate("https://hub.example.com", true); err != nil {
-		t.Fatal(err)
+	for _, domain := range []string{"files.example.net", "site.example.com"} {
+		if err := (SitesConfig{Domain: domain, Scheme: "https"}).Validate("https://hub.example.com", true); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

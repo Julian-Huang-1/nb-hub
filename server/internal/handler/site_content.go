@@ -40,23 +40,7 @@ func (g *SiteContent) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	host := strings.ToLower(r.Host)
-	suffix := "." + g.Sites.Config.Domain
-	if !strings.HasSuffix(host, suffix) {
-		http.NotFound(w, r)
-		return
-	}
-	label := strings.TrimSuffix(host, suffix)
-	if len(label) != 33 || (label[0] != 's' && label[0] != 'p') {
-		http.NotFound(w, r)
-		return
-	}
-	id, err := uuid.Parse(label[1:])
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	preview := label[0] == 'p'
-	target, err := g.Sites.ResolveContent(r.Context(), id, preview)
+	target, preview, err := g.Sites.ResolveContentHost(r.Context(), host)
 	if err != nil {
 		http.NotFound(w, r)
 		return

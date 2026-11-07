@@ -110,7 +110,7 @@ func (h *Auth) Refresh(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, err)
 		return
 	}
-	_, cookie := auth.Extract(r)
+	_, cookie := auth.Extract(r, h.Service.Config.Production)
 	if cookie {
 		if renewed {
 			auth.SetCookies(w, result.Token, result.SessionID, result.ExpiresAt, h.Service.Config)

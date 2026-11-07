@@ -60,8 +60,8 @@ GOOGLE_REDIRECT_URI=https://hub.example.com/api/auth/google/callback
 ## 会话与 CSRF
 
 - 会话 JWT 采用 HS256，固定校验算法、issuer、audience、到期时间和会话 ID。默认有效期 30 天，`AUTH_TOKEN_TTL` 可设为 1 分钟至 90 天之间的 Go duration。
-- Web 的 `nbhub_auth` Cookie 为 HttpOnly、SameSite=Strict、host-only；生产设置 Secure。浏览器登录响应不含可读 JWT。
-- `nbhub_csrf` 是与稳定会话 ID 绑定的 HMAC；Cookie 认证的写操作要求匹配的 `X-CSRF-Token`。续期保留会话 ID，因此不会让其他标签页已有的 CSRF 值失效。
+- Web 会话 Cookie 为 HttpOnly、SameSite=Strict、host-only；生产使用 `__Host-nbhub_auth` 并设置 Secure、Path=/，开发使用 `nbhub_auth`。浏览器登录响应不含可读 JWT。
+- CSRF Cookie（生产 `__Host-nbhub_csrf`，开发 `nbhub_csrf`）是与稳定会话 ID 绑定的 HMAC；Cookie 认证的写操作要求匹配的 `X-CSRF-Token`。续期保留会话 ID，因此不会让其他标签页已有的 CSRF 值失效。
 - 后端会话表保存有效期和撤销时间。每次认证检查会话仍有效；退出、结束某个会话后，旧 JWT 即使尚未到期也会被拒绝。这比只清除浏览器 Cookie 的退出方式多了服务端撤销。
 - 剩余有效期不足一半时续期；Web 安全读请求可自动续期，各客户端也按服务端返回的间隔刷新，并在回到前台时检查。过期或已撤销的会话不能复活。
 - `Authorization: Bearer` 优先于 Cookie；PAT 使用 Bearer，不接受当作 Cookie 会话，也不能换取 JWT、续期会话或管理令牌。
@@ -116,3 +116,7 @@ NB_HUB_AUTH_TEST_DATABASE_URL='postgres://user:pass@127.0.0.1:5432/nbhub_test_au
 ```
 
 该库名必须以 `nbhub_test_` 开头。测试应用认证迁移，创建随机测试账号并清理自己的账号、会话、令牌和验证码。E2E 显式启动服务后运行 `pnpm test:e2e`；需要相同的开发验证码配置，测试会创建随机邮箱账号并结束会话，建议指向一次性测试数据库，测试结束后整体删除该测试库。移动端仍需要真机或模拟器验证原生凭据存储；默认 Web/桌面测试不声称覆盖原生运行时。
+
+生产 Google OAuth state 也使用 `__Host-` Cookie，避免用户内容的兄弟子域通过
+Domain Cookie 注入后台凭据。升级到这些名称后，旧浏览器 Cookie 不再用于生产认证，
+需要重新登录；Bearer 凭据和数据库中的会话记录不受名称变更影响。

@@ -17,13 +17,13 @@ func (h *Auth) GoogleStart(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, err)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: auth.GoogleCookie, Value: cookie, Path: "/api/auth/google", HttpOnly: true, Secure: h.Service.Config.Production, SameSite: http.SameSiteLaxMode, MaxAge: 600})
+	http.SetCookie(w, &http.Cookie{Name: auth.GoogleCookieName(h.Service.Config.Production), Value: cookie, Path: "/", HttpOnly: true, Secure: h.Service.Config.Production, SameSite: http.SameSiteLaxMode, MaxAge: 600})
 	w.Header().Set("Cache-Control", "no-store")
 	http.Redirect(w, r, location, http.StatusFound)
 }
 func (h *Auth) GoogleCallback(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(auth.GoogleCookie)
-	http.SetCookie(w, &http.Cookie{Name: auth.GoogleCookie, Path: "/api/auth/google", HttpOnly: true, Secure: h.Service.Config.Production, SameSite: http.SameSiteLaxMode, MaxAge: -1, Expires: time.Unix(1, 0)})
+	cookie, err := r.Cookie(auth.GoogleCookieName(h.Service.Config.Production))
+	http.SetCookie(w, &http.Cookie{Name: auth.GoogleCookieName(h.Service.Config.Production), Path: "/", HttpOnly: true, Secure: h.Service.Config.Production, SameSite: http.SameSiteLaxMode, MaxAge: -1, Expires: time.Unix(1, 0)})
 	redirect := func() {
 		http.Redirect(w, r, h.Service.Config.FrontendOrigin+"/?auth_error=google_login_failed", http.StatusSeeOther)
 	}

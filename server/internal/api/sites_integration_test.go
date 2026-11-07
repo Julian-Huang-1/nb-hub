@@ -144,6 +144,18 @@ func TestSitesPostgres(t *testing.T) {
 		t.Fatal("site is not private by default")
 	}
 	base := "/api/v1/sites/" + site.ID.String()
+	tlsPermission := func(domain, remote string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest("GET", "/internal/sites/tls-allow?domain="+url.QueryEscape(domain), nil)
+		r.RemoteAddr = remote
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, r)
+		return w
+	}
+	status(tlsPermission(sites.Host(site.ID, nil), "127.0.0.1:12345"), 200)
+	status(tlsPermission(sites.Host(site.ID, nil), "203.0.113.1:12345"), 403)
+	status(tlsPermission(sites.Host(uuid.New(), nil), "127.0.0.1:12345"), 403)
+	status(tlsPermission("attacker.example.com", "127.0.0.1:12345"), 403)
+
 	status(request("GET", base, "", other.Token, "", nil), 404)
 	status(request("PATCH", base, `{"visibility":"public","expected_revision":0}`, other.Token, "", nil), 404)
 	// Browser writes retain the existing CSRF boundary.
@@ -366,6 +378,7 @@ func TestSitesPostgres(t *testing.T) {
 	status(request("GET", "/", "", "", host, cookie), 401)
 	status(request("DELETE", base+"/publication", fmt.Sprintf(`{"expected_revision":%d}`, site.Revision), pat, "", nil), 200)
 	status(request("DELETE", base, "", pat, "", nil), 204)
+	status(tlsPermission(sites.Host(site.ID, nil), "127.0.0.1:12345"), 403)
 	status(request("GET", "/", "", "", host, nil), 404)
 	if _, err = pool.Exec(ctx, `UPDATE site SET deleted_at=now()-interval '11 minutes' WHERE id=$1`, site.ID); err != nil {
 		t.Fatal(err)
