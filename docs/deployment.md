@@ -181,7 +181,8 @@ NB_HUB_TEST_DATABASE_URL='postgres://user:password@127.0.0.1:5432/nbhub_test_mig
 ## 静态 HTML 托管
 
 站点文件使用独立 `sites_data` 卷，API 内运行单并发发布 Worker。生产默认未启用，
-设置独立内容主域并使用 `docker-compose.sites.yml` 后开放内容入口。通配 DNS、
+配置独立内容 hostname 与 DNS 后开放内容入口：内置代理使用 `docker-compose.sites.yml`，
+已有宿主机代理使用 external 模式及对应站点路由。通配 DNS、
 TLS 证书、配额、文件备份及 CLI 操作见[静态站点指南](static-sites.md)。
 
 ## GitHub Actions CI/CD
@@ -273,7 +274,7 @@ docker compose --env-file .env.production --env-file current/images.env \
 ```
 
 启用了内容域名时再加 `-f current/docker-compose.sites.yml`。
-手动回滚应用使用旧 release 的 Compose 和 images.env，确认与当前数据库兼容后再
+手动回滚应用使用旧 release 的 Compose 和 images.env，确认与当前配置及数据库兼容后再
 启动；不自动执行 down 迁移。原先在完整仓库中进行的 `make prod-*` 手动部署流程
 保持独立，不能混用旧的 `:local` 标签覆盖 CI 版本。
 

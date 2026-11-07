@@ -42,5 +42,7 @@ Management requests follow middleware → handler → service → sqlc → Postg
 Uploads reserve storage quota before streaming to disk; durable PostgreSQL jobs
 validate/extract files into immutable local releases. Publishing and rollback
 transactionally change the site pointer with an expected revision. Uploaded content
-is served on a separate registrable domain and never routed to management APIs.
+is served on separate hostnames with production `__Host-` cookies and is never
+routed to management APIs. Sibling content domains are supported; host Caddy can
+use the internal known-site permission endpoint for on-demand TLS.
 See [static sites](static-sites.md) for permissions, CLI and deployment details.
