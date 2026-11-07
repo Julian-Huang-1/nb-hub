@@ -19,8 +19,8 @@ func RouterWithSites(log *slog.Logger, authentication *service.Auth, sites *serv
 	h := &handler.Sites{Service: sites, Log: log}
 	r.Get("/internal/sites/tls-allow", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
-		if !isLoopback(r.RemoteAddr) {
-			http.Error(w, "loopback only", http.StatusForbidden)
+		if !isInternalRemote(r.RemoteAddr) {
+			http.Error(w, "internal network only", http.StatusForbidden)
 			return
 		}
 		h.AllowContentTLS(w, r)

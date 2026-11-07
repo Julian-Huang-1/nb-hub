@@ -147,11 +147,13 @@ func TestSitesPostgres(t *testing.T) {
 	tlsPermission := func(domain, remote string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest("GET", "/internal/sites/tls-allow?domain="+url.QueryEscape(domain), nil)
 		r.RemoteAddr = remote
+		r.Header.Set("X-Forwarded-For", "127.0.0.1")
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, r)
 		return w
 	}
 	status(tlsPermission(sites.Host(site.ID, nil), "127.0.0.1:12345"), 200)
+	status(tlsPermission(sites.Host(site.ID, nil), "172.18.0.1:12345"), 200)
 	status(tlsPermission(sites.Host(site.ID, nil), "203.0.113.1:12345"), 403)
 	status(tlsPermission(sites.Host(uuid.New(), nil), "127.0.0.1:12345"), 403)
 	status(tlsPermission("attacker.example.com", "127.0.0.1:12345"), 403)

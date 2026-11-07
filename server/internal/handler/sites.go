@@ -356,7 +356,7 @@ func (h *Sites) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// AllowContentTLS is called by the loopback-only Caddy certificate permission endpoint.
+// AllowContentTLS is called by the internal-only Caddy certificate permission endpoint.
 func (h *Sites) AllowContentTLS(w http.ResponseWriter, r *http.Request) {
 	if _, _, err := h.Service.ResolveContentHost(r.Context(), r.URL.Query().Get("domain")); err != nil {
 		if errors.Is(err, service.ErrNotFound) {
