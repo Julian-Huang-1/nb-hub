@@ -41,9 +41,8 @@ SHA256 用于检测文件损坏，信任来源仍是 GitHub 仓库。
 其他机器可以将该文件夹复制到 `~/.codex/skills/nb-hub-sites`，
 或下载 Release 的 skill 包，验证 SHA256 后解压到 `~/.codex/skills`。
 
-安装器使用 Bash、tar 和 sha256sum/shasum。私有仓库下载需要有读取权限的
-GitHub CLI（`gh auth login`，或给 gh 注入 `GH_TOKEN`）；公开仓库可通过 curl 下载。
-仓库当前为私有，Release 不会自动公开。
+安装器使用 Bash、tar 和 sha256sum/shasum。官方 Release 可通过 curl 直接下载，
+无需登录 GitHub。使用私有 fork 分发时，下载者需要通过 `gh` 登录有读取权限的账号。
 
 ```bash
 CLI="$(bash .agents/skills/nb-hub-sites/scripts/ensure-cli.sh)"
