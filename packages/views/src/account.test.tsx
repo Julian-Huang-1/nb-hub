@@ -51,3 +51,30 @@ it("does not turn a backend outage into a logged-out state", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("Database unavailable");
   expect(screen.queryByLabelText("Email")).not.toBeInTheDocument();
 });
+it("preserves login form input while the session is rechecked", async () => {
+  let releaseSessionCheck: (() => void) | undefined;
+  let sessionChecks = 0;
+  const fetch = vi.fn(async (input: string | URL | Request) => {
+    const url = String(input);
+    if (url.endsWith("/me")) {
+      sessionChecks += 1;
+      if (sessionChecks > 1) await new Promise<void>((resolve) => { releaseSessionCheck = resolve; });
+      return Response.json({ code: "unauthorized", error: "Sign in" }, { status: 401 });
+    }
+    if (url.endsWith("/config")) return Response.json({ email_login: true, google_login: false, signup_enabled: true });
+    throw new Error(`Unexpected request ${url}`);
+  });
+  vi.stubGlobal("fetch", fetch);
+  const client = createAuthClient("", { mode: "cookie" });
+  const queries = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }); clients.push(queries);
+  render(<QueryClientProvider client={queries}><AccountView client={client} apiUrl="" /></QueryClientProvider>);
+  const actor = userEvent.setup();
+  const email = await screen.findByLabelText("Email");
+  await actor.type(email, user.email);
+
+  const recheck = queries.refetchQueries({ queryKey: ["auth", "me"] });
+  expect(screen.getByLabelText("Email")).toHaveValue(user.email);
+  releaseSessionCheck?.();
+  await recheck;
+  expect(screen.getByLabelText("Email")).toHaveValue(user.email);
+});

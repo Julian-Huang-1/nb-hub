@@ -12,7 +12,19 @@ const accountKey = ["auth", "me"] as const;
 
 export function AccountView({ client, apiUrl, initialError }: { client: AuthClient; apiUrl: string; initialError?: string }) {
   const cache = useQueryClient();
-  const me = useQuery({ queryKey: accountKey, queryFn: client.me, retry: false, staleTime: 30_000 });
+  const me = useQuery({
+    queryKey: accountKey,
+    queryFn: async () => {
+      try {
+        return await client.me();
+      } catch (error) {
+        if (error instanceof AuthError && error.status === 401) return null;
+        throw error;
+      }
+    },
+    retry: false,
+    staleTime: 30_000,
+  });
   const renewal = useMutation({ mutationFn: client.refresh, onError: (error) => { if (error instanceof AuthError && error.status === 401) cache.setQueryData(accountKey, null); } });
   const renew = renewal.mutateAsync;
   useEffect(() => {
