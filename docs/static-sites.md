@@ -31,6 +31,8 @@ p<32 位 deployment UUID>.内容域名 固定版本预览
 
 ## CLI
 
+二进制发布、版本号和 skill 自动下载安装见 [CLI 发布与 skill 安装](cli-release.md)。
+
 从仓库安装：
 
 ```bash

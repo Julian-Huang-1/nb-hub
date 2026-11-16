@@ -1,0 +1,42 @@
+version: 2
+project_name: nb-hub
+
+builds:
+  - main: ./cmd/nb-hub
+    dir: server
+    binary: nb-hub
+    env: [CGO_ENABLED=0]
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.FullCommit}}
+      - -X main.buildDate={{.Date}}
+
+archives:
+  - id: cli
+    formats: [tar.gz]
+    name_template: 'nb-hub_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - src: docs/cli-release.md
+        strip_parent: true
+  - id: skill
+    meta: true
+    formats: [tar.gz]
+    name_template: 'nb-hub-sites_{{ .Version }}'
+    files:
+      - src: .agents/skills/nb-hub-sites/SKILL.md
+        dst: nb-hub-sites
+        strip_parent: true
+      - src: .agents/skills/nb-hub-sites/scripts/ensure-cli.sh
+        dst: nb-hub-sites/scripts
+        strip_parent: true
+
+checksum:
+  name_template: SHA256SUMS
+
+release:
+  # Publish only after all assets have been uploaded.
+  draft: true

@@ -65,7 +65,7 @@ prod-logs:
 test:
 	pnpm typecheck
 	pnpm test
-	node --test scripts/dev-env.test.mjs scripts/deploy-production.test.mjs
+	node --test scripts/dev-env.test.mjs scripts/deploy-production.test.mjs scripts/ensure-cli.test.mjs
 	cd server && go test ./...
 
 test-e2e:

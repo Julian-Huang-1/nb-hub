@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,8 +13,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func main() {
-	root := &cobra.Command{Use: "nb-hub", Short: "nb-hub command line"}
+// Release builds inject these values with -ldflags; source installs report dev.
+var (
+	version   = "dev"
+	commit    = "unknown"
+	buildDate = "unknown"
+)
+
+func newRoot() *cobra.Command {
+	root := &cobra.Command{Use: "nb-hub", Short: "nb-hub command line", Version: version}
+	root.SetVersionTemplate(fmt.Sprintf("nb-hub {{.Version}} (commit %s, built %s)\n", commit, buildDate))
 	sitecli.AddCommands(root)
 	root.AddCommand(&cobra.Command{
 		Use:   "daemon",
@@ -26,6 +35,11 @@ func main() {
 			return daemon.Run(cmd.Context(), apiURL, slog.Default())
 		},
 	})
+	return root
+}
+
+func main() {
+	root := newRoot()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if err := root.ExecuteContext(ctx); err != nil {
