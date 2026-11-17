@@ -8,7 +8,7 @@ SELECT count(*) FROM site WHERE owner_id = $1 AND deleted_at IS NULL;
 SELECT coalesce(sum(d.storage_bytes), 0)::bigint FROM deployment d JOIN site s ON s.id=d.site_id WHERE s.owner_id=$1;
 
 -- name: CreateSite :one
-INSERT INTO site(id,owner_id,name,visibility,routing_mode) VALUES($1,$2,$3,$4,$5) RETURNING *;
+INSERT INTO site(id,owner_id,name,visibility,routing_mode,short_id) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT (short_id) DO NOTHING RETURNING *;
 
 -- name: GetOwnedSite :one
 SELECT * FROM site WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL;
@@ -32,7 +32,7 @@ UPDATE site SET deleted_at=now(),current_deployment_id=NULL,revision=revision+1 
 UPDATE site SET current_deployment_id=sqlc.narg(deployment_id)::uuid,revision=revision+1 WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL AND revision=$3 RETURNING *;
 
 -- name: CreateDeployment :one
-INSERT INTO deployment(id,site_id,status,format,entrypoint,message,idempotency_key,storage_bytes) VALUES($1,$2,'uploading',$3,$4,$5,$6,$7) RETURNING *;
+INSERT INTO deployment(id,site_id,status,format,entrypoint,message,idempotency_key,storage_bytes,short_id) VALUES($1,$2,'uploading',$3,$4,$5,$6,$7,$8) ON CONFLICT (short_id) DO NOTHING RETURNING *;
 
 -- name: GetDeployment :one
 SELECT * FROM deployment WHERE site_id=$1 AND id=$2;
@@ -113,3 +113,9 @@ SELECT * FROM deployment WHERE id=$1;
 
 -- name: CountOwnerDeployments :one
 SELECT count(*) FROM deployment d JOIN site s ON s.id=d.site_id WHERE s.owner_id=$1;
+
+-- name: GetContentSiteByShortID :one
+SELECT * FROM site WHERE short_id=$1 AND deleted_at IS NULL;
+
+-- name: GetPreviewDeploymentByShortID :one
+SELECT * FROM deployment WHERE short_id=$1 AND status='ready';

@@ -149,7 +149,7 @@ func (q *Queries) CreateContentSession(ctx context.Context, arg CreateContentSes
 }
 
 const createDeployment = `-- name: CreateDeployment :one
-INSERT INTO deployment(id,site_id,status,format,entrypoint,message,idempotency_key,storage_bytes) VALUES($1,$2,'uploading',$3,$4,$5,$6,$7) RETURNING id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at
+INSERT INTO deployment(id,site_id,status,format,entrypoint,message,idempotency_key,storage_bytes,short_id) VALUES($1,$2,'uploading',$3,$4,$5,$6,$7,$8) ON CONFLICT (short_id) DO NOTHING RETURNING id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id
 `
 
 type CreateDeploymentParams struct {
@@ -160,6 +160,7 @@ type CreateDeploymentParams struct {
 	Message        string      `json:"message"`
 	IdempotencyKey pgtype.Text `json:"idempotency_key"`
 	StorageBytes   int64       `json:"storage_bytes"`
+	ShortID        string      `json:"short_id"`
 }
 
 func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error) {
@@ -171,6 +172,7 @@ func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentPara
 		arg.Message,
 		arg.IdempotencyKey,
 		arg.StorageBytes,
+		arg.ShortID,
 	)
 	var i Deployment
 	err := row.Scan(
@@ -186,6 +188,7 @@ func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentPara
 		&i.ErrorCode,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
@@ -200,7 +203,7 @@ func (q *Queries) CreateDeploymentJob(ctx context.Context, deploymentID uuid.UUI
 }
 
 const createSite = `-- name: CreateSite :one
-INSERT INTO site(id,owner_id,name,visibility,routing_mode) VALUES($1,$2,$3,$4,$5) RETURNING id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at
+INSERT INTO site(id,owner_id,name,visibility,routing_mode,short_id) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT (short_id) DO NOTHING RETURNING id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id
 `
 
 type CreateSiteParams struct {
@@ -209,6 +212,7 @@ type CreateSiteParams struct {
 	Name        string    `json:"name"`
 	Visibility  string    `json:"visibility"`
 	RoutingMode string    `json:"routing_mode"`
+	ShortID     string    `json:"short_id"`
 }
 
 func (q *Queries) CreateSite(ctx context.Context, arg CreateSiteParams) (Site, error) {
@@ -218,6 +222,7 @@ func (q *Queries) CreateSite(ctx context.Context, arg CreateSiteParams) (Site, e
 		arg.Name,
 		arg.Visibility,
 		arg.RoutingMode,
+		arg.ShortID,
 	)
 	var i Site
 	err := row.Scan(
@@ -230,6 +235,7 @@ func (q *Queries) CreateSite(ctx context.Context, arg CreateSiteParams) (Site, e
 		&i.Revision,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
@@ -252,7 +258,7 @@ func (q *Queries) DeleteSite(ctx context.Context, arg DeleteSiteParams) (int64, 
 }
 
 const deletedSiteArtifacts = `-- name: DeletedSiteArtifacts :many
-SELECT d.id, d.site_id, d.status, d.format, d.entrypoint, d.message, d.content_hash, d.idempotency_key, d.storage_bytes, d.error_code, d.created_at, d.updated_at FROM deployment d JOIN site s ON s.id=d.site_id WHERE s.deleted_at IS NOT NULL AND s.deleted_at < now()-interval '10 minutes' AND d.storage_bytes>0
+SELECT d.id, d.site_id, d.status, d.format, d.entrypoint, d.message, d.content_hash, d.idempotency_key, d.storage_bytes, d.error_code, d.created_at, d.updated_at, d.short_id FROM deployment d JOIN site s ON s.id=d.site_id WHERE s.deleted_at IS NOT NULL AND s.deleted_at < now()-interval '10 minutes' AND d.storage_bytes>0
 `
 
 func (q *Queries) DeletedSiteArtifacts(ctx context.Context) ([]Deployment, error) {
@@ -277,6 +283,7 @@ func (q *Queries) DeletedSiteArtifacts(ctx context.Context) ([]Deployment, error
 			&i.ErrorCode,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ShortID,
 		); err != nil {
 			return nil, err
 		}
@@ -360,7 +367,7 @@ func (q *Queries) FinishDeploymentJob(ctx context.Context, arg FinishDeploymentJ
 }
 
 const getAnyDeployment = `-- name: GetAnyDeployment :one
-SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at FROM deployment WHERE id=$1
+SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id FROM deployment WHERE id=$1
 `
 
 func (q *Queries) GetAnyDeployment(ctx context.Context, id uuid.UUID) (Deployment, error) {
@@ -379,12 +386,13 @@ func (q *Queries) GetAnyDeployment(ctx context.Context, id uuid.UUID) (Deploymen
 		&i.ErrorCode,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const getContentSite = `-- name: GetContentSite :one
-SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at FROM site WHERE id=$1 AND deleted_at IS NULL
+SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id FROM site WHERE id=$1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetContentSite(ctx context.Context, id uuid.UUID) (Site, error) {
@@ -400,12 +408,35 @@ func (q *Queries) GetContentSite(ctx context.Context, id uuid.UUID) (Site, error
 		&i.Revision,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.ShortID,
+	)
+	return i, err
+}
+
+const getContentSiteByShortID = `-- name: GetContentSiteByShortID :one
+SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id FROM site WHERE short_id=$1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetContentSiteByShortID(ctx context.Context, shortID string) (Site, error) {
+	row := q.db.QueryRow(ctx, getContentSiteByShortID, shortID)
+	var i Site
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.Name,
+		&i.Visibility,
+		&i.RoutingMode,
+		&i.CurrentDeploymentID,
+		&i.Revision,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const getDeployment = `-- name: GetDeployment :one
-SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at FROM deployment WHERE site_id=$1 AND id=$2
+SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id FROM deployment WHERE site_id=$1 AND id=$2
 `
 
 type GetDeploymentParams struct {
@@ -429,12 +460,13 @@ func (q *Queries) GetDeployment(ctx context.Context, arg GetDeploymentParams) (D
 		&i.ErrorCode,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const getIdempotentDeployment = `-- name: GetIdempotentDeployment :one
-SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at FROM deployment WHERE site_id=$1 AND idempotency_key=$2
+SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id FROM deployment WHERE site_id=$1 AND idempotency_key=$2
 `
 
 type GetIdempotentDeploymentParams struct {
@@ -458,12 +490,13 @@ func (q *Queries) GetIdempotentDeployment(ctx context.Context, arg GetIdempotent
 		&i.ErrorCode,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const getOwnedSite = `-- name: GetOwnedSite :one
-SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at FROM site WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL
+SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id FROM site WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL
 `
 
 type GetOwnedSiteParams struct {
@@ -484,12 +517,13 @@ func (q *Queries) GetOwnedSite(ctx context.Context, arg GetOwnedSiteParams) (Sit
 		&i.Revision,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const getPreviewDeployment = `-- name: GetPreviewDeployment :one
-SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at FROM deployment WHERE id=$1 AND status='ready'
+SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id FROM deployment WHERE id=$1 AND status='ready'
 `
 
 func (q *Queries) GetPreviewDeployment(ctx context.Context, id uuid.UUID) (Deployment, error) {
@@ -508,12 +542,38 @@ func (q *Queries) GetPreviewDeployment(ctx context.Context, id uuid.UUID) (Deplo
 		&i.ErrorCode,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ShortID,
+	)
+	return i, err
+}
+
+const getPreviewDeploymentByShortID = `-- name: GetPreviewDeploymentByShortID :one
+SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id FROM deployment WHERE short_id=$1 AND status='ready'
+`
+
+func (q *Queries) GetPreviewDeploymentByShortID(ctx context.Context, shortID string) (Deployment, error) {
+	row := q.db.QueryRow(ctx, getPreviewDeploymentByShortID, shortID)
+	var i Deployment
+	err := row.Scan(
+		&i.ID,
+		&i.SiteID,
+		&i.Status,
+		&i.Format,
+		&i.Entrypoint,
+		&i.Message,
+		&i.ContentHash,
+		&i.IdempotencyKey,
+		&i.StorageBytes,
+		&i.ErrorCode,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const listDeployments = `-- name: ListDeployments :many
-SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at FROM deployment WHERE site_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3
+SELECT id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id FROM deployment WHERE site_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3
 `
 
 type ListDeploymentsParams struct {
@@ -544,6 +604,7 @@ func (q *Queries) ListDeployments(ctx context.Context, arg ListDeploymentsParams
 			&i.ErrorCode,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ShortID,
 		); err != nil {
 			return nil, err
 		}
@@ -556,7 +617,7 @@ func (q *Queries) ListDeployments(ctx context.Context, arg ListDeploymentsParams
 }
 
 const listSites = `-- name: ListSites :many
-SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at FROM site WHERE owner_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3
+SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id FROM site WHERE owner_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3
 `
 
 type ListSitesParams struct {
@@ -584,6 +645,7 @@ func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]Site, e
 			&i.Revision,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.ShortID,
 		); err != nil {
 			return nil, err
 		}
@@ -596,7 +658,7 @@ func (q *Queries) ListSites(ctx context.Context, arg ListSitesParams) ([]Site, e
 }
 
 const lockOwnedSite = `-- name: LockOwnedSite :one
-SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at FROM site WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL FOR UPDATE
+SELECT id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id FROM site WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL FOR UPDATE
 `
 
 type LockOwnedSiteParams struct {
@@ -617,6 +679,7 @@ func (q *Queries) LockOwnedSite(ctx context.Context, arg LockOwnedSiteParams) (S
 		&i.Revision,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
@@ -671,7 +734,7 @@ func (q *Queries) PruneContentSessions(ctx context.Context) error {
 }
 
 const publishSite = `-- name: PublishSite :one
-UPDATE site SET current_deployment_id=$4::uuid,revision=revision+1 WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL AND revision=$3 RETURNING id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at
+UPDATE site SET current_deployment_id=$4::uuid,revision=revision+1 WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL AND revision=$3 RETURNING id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id
 `
 
 type PublishSiteParams struct {
@@ -699,12 +762,13 @@ func (q *Queries) PublishSite(ctx context.Context, arg PublishSiteParams) (Site,
 		&i.Revision,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const queueDeployment = `-- name: QueueDeployment :one
-UPDATE deployment SET status='queued',content_hash=$2,updated_at=now() WHERE id=$1 AND status='uploading' RETURNING id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at
+UPDATE deployment SET status='queued',content_hash=$2,updated_at=now() WHERE id=$1 AND status='uploading' RETURNING id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id
 `
 
 type QueueDeploymentParams struct {
@@ -728,12 +792,13 @@ func (q *Queries) QueueDeployment(ctx context.Context, arg QueueDeploymentParams
 		&i.ErrorCode,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
 
 const startDeployment = `-- name: StartDeployment :one
-UPDATE deployment SET status='processing',updated_at=now() WHERE id=$1 AND status IN ('queued','processing') RETURNING id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at
+UPDATE deployment SET status='processing',updated_at=now() WHERE id=$1 AND status IN ('queued','processing') RETURNING id, site_id, status, format, entrypoint, message, content_hash, idempotency_key, storage_bytes, error_code, created_at, updated_at, short_id
 `
 
 func (q *Queries) StartDeployment(ctx context.Context, id uuid.UUID) (Deployment, error) {
@@ -752,6 +817,7 @@ func (q *Queries) StartDeployment(ctx context.Context, id uuid.UUID) (Deployment
 		&i.ErrorCode,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ShortID,
 	)
 	return i, err
 }
@@ -768,7 +834,7 @@ func (q *Queries) TotalSiteStorage(ctx context.Context) (int64, error) {
 }
 
 const updateSite = `-- name: UpdateSite :one
-UPDATE site SET name=$3, visibility=$4, routing_mode=$5, revision=revision+1 WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL AND revision=$6 RETURNING id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at
+UPDATE site SET name=$3, visibility=$4, routing_mode=$5, revision=revision+1 WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL AND revision=$6 RETURNING id, owner_id, name, visibility, routing_mode, current_deployment_id, revision, created_at, deleted_at, short_id
 `
 
 type UpdateSiteParams struct {
@@ -800,6 +866,7 @@ func (q *Queries) UpdateSite(ctx context.Context, arg UpdateSiteParams) (Site, e
 		&i.Revision,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.ShortID,
 	)
 	return i, err
 }

@@ -41,6 +41,7 @@ type Deployment struct {
 	ErrorCode      string      `json:"error_code"`
 	CreatedAt      time.Time   `json:"created_at"`
 	UpdatedAt      time.Time   `json:"updated_at"`
+	ShortID        string      `json:"short_id"`
 }
 
 type DeploymentJob struct {
@@ -81,6 +82,7 @@ type Site struct {
 	Revision            int64              `json:"revision"`
 	CreatedAt           time.Time          `json:"created_at"`
 	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	ShortID             string             `json:"short_id"`
 }
 
 type SiteAccessTicket struct {

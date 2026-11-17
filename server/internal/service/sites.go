@@ -60,6 +60,7 @@ type Deployment struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// Host constructs the legacy UUID hostname, which remains supported.
 func (s *Sites) Host(site uuid.UUID, preview *uuid.UUID) string {
 	label := "s" + strings.ReplaceAll(site.String(), "-", "")
 	if preview != nil {
@@ -67,16 +68,19 @@ func (s *Sites) Host(site uuid.UUID, preview *uuid.UUID) string {
 	}
 	return label + "." + s.Config.Domain
 }
+func (s *Sites) shortHost(prefix, id string) string {
+	return prefix + id + "." + s.Config.Domain
+}
 func (s *Sites) SiteResponse(v db.Site) Site {
 	var current *uuid.UUID
 	if v.CurrentDeploymentID.Valid {
 		id := uuid.UUID(v.CurrentDeploymentID.Bytes)
 		current = &id
 	}
-	return Site{v.ID, v.Name, v.Visibility, v.RoutingMode, v.Revision, current, s.Config.Scheme + "://" + s.Host(v.ID, nil) + "/", v.CreatedAt}
+	return Site{v.ID, v.Name, v.Visibility, v.RoutingMode, v.Revision, current, s.Config.Scheme + "://" + s.shortHost("s", v.ShortID) + "/", v.CreatedAt}
 }
 func (s *Sites) DeploymentResponse(v db.Deployment) Deployment {
-	return Deployment{v.ID, v.SiteID, v.Status, v.Entrypoint, v.Message, v.ErrorCode, v.StorageBytes, s.Config.Scheme + "://" + s.Host(v.SiteID, &v.ID) + "/", "/api/v1/sites/" + v.SiteID.String() + "/deployments/" + v.ID.String(), v.CreatedAt}
+	return Deployment{v.ID, v.SiteID, v.Status, v.Entrypoint, v.Message, v.ErrorCode, v.StorageBytes, s.Config.Scheme + "://" + s.shortHost("p", v.ShortID) + "/", "/api/v1/sites/" + v.SiteID.String() + "/deployments/" + v.ID.String(), v.CreatedAt}
 }
 func siteError(err error) error {
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -107,7 +111,9 @@ func (s *Sites) Create(ctx context.Context, owner uuid.UUID, name, visibility, r
 	if n >= 50 {
 		return Site{}, ErrQuota
 	}
-	v, err := q.CreateSite(ctx, db.CreateSiteParams{ID: uuid.New(), OwnerID: owner, Name: strings.TrimSpace(name), Visibility: visibility, RoutingMode: routing})
+	v, err := createWithShortID(func(shortID string) (db.Site, error) {
+		return q.CreateSite(ctx, db.CreateSiteParams{ID: uuid.New(), OwnerID: owner, Name: strings.TrimSpace(name), Visibility: visibility, RoutingMode: routing, ShortID: shortID})
+	})
 	if err != nil {
 		return Site{}, err
 	}
@@ -263,7 +269,9 @@ func (s *Sites) Upload(ctx context.Context, owner, site uuid.UUID, format, entry
 	if used+reserved > s.Config.OwnerQuota || total+reserved > s.Config.TotalQuota {
 		return Deployment{}, ErrQuota
 	}
-	d, err := q.CreateDeployment(ctx, db.CreateDeploymentParams{ID: uuid.New(), SiteID: site, Format: format, Entrypoint: entry, Message: message, IdempotencyKey: pgtype.Text{String: key, Valid: key != ""}, StorageBytes: reserved})
+	d, err := createWithShortID(func(shortID string) (db.Deployment, error) {
+		return q.CreateDeployment(ctx, db.CreateDeploymentParams{ID: uuid.New(), SiteID: site, Format: format, Entrypoint: entry, Message: message, IdempotencyKey: pgtype.Text{String: key, Valid: key != ""}, StorageBytes: reserved, ShortID: shortID})
+	})
 	if err != nil {
 		return Deployment{}, err
 	}

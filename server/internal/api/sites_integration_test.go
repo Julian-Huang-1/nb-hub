@@ -199,8 +199,20 @@ func TestSitesPostgres(t *testing.T) {
 	published := request("PUT", base+"/publication", fmt.Sprintf(`{"deployment_id":%q,"expected_revision":0}`, d1.ID), pat, "", nil)
 	status(published, 200)
 	site = decodeSite(published)
-	host := sites.Host(site.ID, nil)
-	preview := sites.Host(site.ID, &d1.ID)
+	siteURL, err := url.Parse(site.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	previewURL, err := url.Parse(d1.PreviewURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	host, preview := siteURL.Host, previewURL.Host
+	if len(strings.Split(host, ".")[0]) != 11 || len(strings.Split(preview, ".")[0]) != 11 {
+		t.Fatal("expected ten-character short IDs", host, preview)
+	}
+	status(tlsPermission(host, "127.0.0.1:12345"), 200)
+	status(tlsPermission(preview, "127.0.0.1:12345"), 200)
 	status(request("GET", "/", "", "", host, nil), 401)
 	status(request("GET", "/assets/main.js", "", "", host, nil), 401)
 	status(request("GET", "/api/auth/me", "", owner.Token, host, nil), 401)
@@ -210,6 +222,9 @@ func TestSitesPostgres(t *testing.T) {
 	status(ticketResponse, 201)
 	var ticket service.AccessTicket
 	json.Unmarshal(ticketResponse.Body.Bytes(), &ticket)
+	if ticket.ExchangeURL != "http://"+host+"/.nbhub/access" {
+		t.Fatal("ticket targets wrong hostname", ticket.ExchangeURL)
+	}
 	exchange := func(target string) *httptest.ResponseRecorder {
 		r := httptest.NewRequest("POST", "/.nbhub/access", strings.NewReader(url.Values{"ticket": {ticket.Ticket}}.Encode()))
 		r.Host = target
@@ -219,6 +234,7 @@ func TestSitesPostgres(t *testing.T) {
 		return w
 	}
 	status(exchange(preview), 401)
+	status(exchange(sites.Host(site.ID, nil)), 401)
 	exchanged := exchange(host)
 	status(exchanged, 303)
 	cookies := exchanged.Result().Cookies()
@@ -235,6 +251,17 @@ func TestSitesPostgres(t *testing.T) {
 	status(request("GET", "/assets/main.js", "", "", host, cookie), 200)
 	status(request("GET", "/", "", "", preview, cookie), 401)
 	status(request("GET", "/../index.html", "", "", host, cookie), 404)
+	// Preview tickets and cookies bind to the new version hostname.
+	previewTicket := request("POST", base+"/access-tickets", fmt.Sprintf(`{"deployment_id":%q}`, d1.ID), owner.Token, "", nil)
+	status(previewTicket, 201)
+	json.Unmarshal(previewTicket.Body.Bytes(), &ticket)
+	if ticket.ExchangeURL != "http://"+preview+"/.nbhub/access" {
+		t.Fatal("wrong preview ticket URL")
+	}
+	status(exchange(host), 401)
+	previewExchange := exchange(preview)
+	status(previewExchange, 303)
+	status(request("GET", "/", "", "", preview, previewExchange.Result().Cookies()[0]), 200)
 	// Public access never exposes version previews, and checks still run for 304s.
 	changed := request("PATCH", base, fmt.Sprintf(`{"visibility":"public","expected_revision":%d}`, site.Revision), pat, "", nil)
 	status(changed, 200)
@@ -245,6 +272,21 @@ func TestSitesPostgres(t *testing.T) {
 		t.Fatal("unsafe public cache")
 	}
 	status(request("GET", "/", "", "", preview, nil), 401)
+	legacy := request("GET", "/", "", "", sites.Host(site.ID, nil), nil)
+	status(legacy, 200)
+	if legacy.Body.String() != public.Body.String() {
+		t.Fatal("legacy URL serves a different version")
+	}
+	status(request("GET", "/", "", "", sites.Host(site.ID, &d1.ID), nil), 401)
+	// A short hostname must resolve to exactly the same target as its UUID alias.
+	shortTarget, _, err := sites.ResolveContentHost(ctx, preview)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldTarget, _, err := sites.ResolveContentHost(ctx, sites.Host(site.ID, &d1.ID))
+	if err != nil || shortTarget != oldTarget {
+		t.Fatal("preview alias mismatch", err)
+	}
 	status(request("GET", "/assets/missing.js", "", "", host, nil), 404)
 	d2, err := client.Upload(ctx, site.ID.String(), dir, "index.html", "second", "second-key")
 	if err != nil {

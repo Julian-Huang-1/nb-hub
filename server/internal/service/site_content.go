@@ -58,14 +58,37 @@ func (s *Sites) ResolveContentHost(ctx context.Context, host string) (ContentTar
 		return ContentTarget{}, false, ErrNotFound
 	}
 	label := strings.TrimSuffix(host, suffix)
-	if len(label) != 33 || (label[0] != 's' && label[0] != 'p') {
+	if (len(label) != 11 && len(label) != 33) || (label[0] != 's' && label[0] != 'p') {
 		return ContentTarget{}, false, ErrNotFound
+	}
+	preview := label[0] == 'p'
+	if len(label) == 11 {
+		for _, c := range label[1:] {
+			if !(c >= 'a' && c <= 'z') && !(c >= '2' && c <= '7') {
+				return ContentTarget{}, preview, ErrNotFound
+			}
+		}
+		var id uuid.UUID
+		if preview {
+			version, err := s.Queries.GetPreviewDeploymentByShortID(ctx, label[1:])
+			if err != nil {
+				return ContentTarget{}, preview, siteError(err)
+			}
+			id = version.ID
+		} else {
+			site, err := s.Queries.GetContentSiteByShortID(ctx, label[1:])
+			if err != nil {
+				return ContentTarget{}, preview, siteError(err)
+			}
+			id = site.ID
+		}
+		target, err := s.ResolveContent(ctx, id, preview)
+		return target, preview, err
 	}
 	id, err := uuid.Parse(label[1:])
 	if err != nil {
 		return ContentTarget{}, false, ErrNotFound
 	}
-	preview := label[0] == 'p'
 	target, err := s.ResolveContent(ctx, id, preview)
 	return target, preview, err
 }

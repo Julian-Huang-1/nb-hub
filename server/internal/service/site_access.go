@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/Julian-Huang-1/nb-hub/server/internal/auth"
@@ -19,14 +20,17 @@ func (s *Sites) AccessTicket(ctx context.Context, identity Identity, site uuid.U
 	if identity.Kind != "session" {
 		return AccessTicket{}, ErrSessionRequired
 	}
-	if _, err := s.Get(ctx, identity.User.ID, site); err != nil {
+	owned, err := s.Get(ctx, identity.User.ID, site)
+	if err != nil {
 		return AccessTicket{}, err
 	}
+	targetURL := owned.URL
 	if preview != nil {
 		d, err := s.GetDeployment(ctx, identity.User.ID, site, *preview)
 		if err != nil {
 			return AccessTicket{}, err
 		}
+		targetURL = d.PreviewURL
 		if d.Status != "ready" {
 			return AccessTicket{}, ErrNotReady
 		}
@@ -35,7 +39,11 @@ func (s *Sites) AccessTicket(ctx context.Context, identity Identity, site uuid.U
 	if err != nil {
 		return AccessTicket{}, err
 	}
-	host := s.Host(site, preview)
+	target, err := url.Parse(targetURL)
+	if err != nil {
+		return AccessTicket{}, err
+	}
+	host := target.Host
 	expires := time.Now().Add(time.Minute)
 	err = s.Queries.CreateAccessTicket(ctx, db.CreateAccessTicketParams{TokenHash: auth.HashToken(token), SiteID: site, SessionID: identity.SessionID, Hostname: host, ExpiresAt: expires})
 	return AccessTicket{token, s.Config.Scheme + "://" + host + "/.nbhub/access", expires}, err

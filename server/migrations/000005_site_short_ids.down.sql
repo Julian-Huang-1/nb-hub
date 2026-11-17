@@ -1,0 +1,4 @@
+BEGIN;
+ALTER TABLE deployment DROP COLUMN short_id;
+ALTER TABLE site DROP COLUMN short_id;
+COMMIT;
