@@ -20,6 +20,41 @@ The clients connect to the Go API for health and authentication; the CLI also ma
 - `apps/desktop`: Electron main/preload, tab/window behavior and React Router routes.
 - `apps/mobile`: independent native screens, Expo Router and mobile query state.
 
+### Web page organization
+
+The Web app follows Multica's separation of routing, browser integration and
+shared business views:
+
+```text
+apps/web/
+├─ app/
+│  ├─ layout.tsx                 Root layout, global styles and WebProviders
+│  └─ page.tsx                   / route, renders WebAccount
+├─ components/
+│  └─ web-providers.tsx          Web-wide React providers
+├─ features/
+│  └─ auth/web-account.tsx       Cookie auth, browser activity and callback errors
+└─ proxy.ts                     Same-origin API rewrites
+
+packages/views/src/
+├─ account.tsx                  Shared account UI
+└─ home.tsx                     Shared home UI
+```
+
+Keep `app` focused on Next.js route files, layouts and route-specific wiring.
+Add pages as `<segment>/page.tsx`; ordinary component filenames do not create
+URLs. When pages need different shared layouts, use route groups such as
+`(auth)` or `(dashboard)` with their own `layout.tsx`; group names do not appear
+in URLs. Introduce these groups only when actual pages need them.
+
+Web-wide components and providers belong in `apps/web/components`; browser-only
+feature integration belongs in `apps/web/features`, and reusable platform
+adapters belong in `apps/web/platform` when needed. Components used only by one
+Web route can live in that route's `_components` directory. Business UI shared
+with desktop stays in `packages/views`, and generic primitives stay in
+`packages/ui`. The home route currently composes the existing shared account
+and home views; it does not introduce separate login or workspace routes.
+
 ## Backend ownership
 
 - `server/cmd/server`: API process.

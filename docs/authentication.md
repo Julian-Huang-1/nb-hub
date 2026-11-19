@@ -18,7 +18,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 开发码仅在 `APP_ENV=development` 时读取，不发送真实邮件，在生产中无效。未配置 `JWT_SECRET` 时，显式开发环境使用开发专用密钥；生产必须配置独立随机密钥。不要把线上凭据或数据库连接复制到本地配置。
 
-Web 同源 `/api/auth/*` 由 Next.js 转发给 `NB_HUB_API_URL`（开发默认 `http://127.0.0.1:8080`）；生产由 Caddy 直接路由到 API。Web 登录不再依赖 `NEXT_PUBLIC_API_URL`。代理仅开放 auth 和 health，拒绝 daemon 路径、异常路径段以及超过 8KB 的请求体。
+Web 同源 `/api/auth/*` 由 `apps/web/proxy.ts` 使用 Next.js rewrite 转发，`NB_HUB_API_URL` 在请求时读取（仅开发环境默认 `http://127.0.0.1:8080`）；生产由 Caddy 直接路由到 API，未配置该变量时 Next.js 不猜测后端地址。Web 登录不再依赖 `NEXT_PUBLIC_API_URL`。代理仅开放 auth 和 health，拒绝 daemon 路径和异常路径段，筛选认证相关请求头；请求体和后端响应（包括登录 Cookie）由 Next.js 转发。认证 JSON 请求体的 8KB 限制由 Go 处理器执行，超限返回 400。代理不再手动读取请求体，也不再定义 20 秒 fetch 超时或自定义 502 JSON 响应。
 
 桌面端、移动端复用 API 客户端，但独立处理凭据存储和平台生命周期。桌面端使用 Electron safeStorage 加密后保存到应用数据目录；不支持加密或 Linux 仅有 basic_text 后端时拒绝保存。移动端使用 Expo SecureStore。没有把令牌放进共享业务包的 localStorage，也没有在 React Native 中导入 DOM 组件。
 

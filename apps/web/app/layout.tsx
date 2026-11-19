@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Providers } from "./providers";
+import { WebProviders } from "@/components/web-providers";
 import "@nb-hub/ui/styles/globals.css";
 
 export const metadata = { title: "nb-hub" };
@@ -8,7 +8,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <WebProviders>{children}</WebProviders>
       </body>
     </html>
   );

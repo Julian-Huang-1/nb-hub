@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { createAuthClient } from "@nb-hub/core/auth";
 import { AccountView } from "@nb-hub/views/account";
