@@ -2,15 +2,15 @@
 
 ## 环境隔离
 
-| 配置 | 本地开发 | 生产 |
-| --- | --- | --- |
-| 环境文件 | `.env.development` | `.env.production` |
-| Compose 文件 | `docker-compose.yml` | `docker-compose.production.yml` |
-| Compose 项目名 | `nb-hub-dev` | `nb-hub-prod` |
-| 数据库 | `nbhub_dev` | `nbhub_prod` |
-| 数据库用户 | `nbhub_dev`（默认） | `nbhub_prod` |
-| 数据卷 | `nb-hub-dev_postgres_data` | `nb-hub-prod_postgres_data` |
-| 数据库网络 | 仅本机 `127.0.0.1:5432` | 仅容器网络，不发布端口 |
+| 配置           | 本地开发                   | 生产                            |
+| -------------- | -------------------------- | ------------------------------- |
+| 环境文件       | `.env.development`         | `.env.production`               |
+| Compose 文件   | `docker-compose.yml`       | `docker-compose.production.yml` |
+| Compose 项目名 | `nb-hub-dev`               | `nb-hub-prod`                   |
+| 数据库         | `nbhub_dev`                | `nbhub_prod`                    |
+| 数据库用户     | `nbhub_dev`（默认）        | `nbhub_prod`                    |
+| 数据卷         | `nb-hub-dev_postgres_data` | `nb-hub-prod_postgres_data`     |
+| 数据库网络     | 仅本机 `127.0.0.1:5432`    | 仅容器网络，不发布端口          |
 
 两套配置即使在同一台机器上运行，也使用不同项目和数据卷。不要通过
 `COMPOSE_PROJECT_NAME` 或 `-p` 将两套配置改成同一个项目名。环境文件已加入
@@ -222,22 +222,22 @@ GitHub Secrets，不提交仓库或发送到聊天。通过可信连接取得并
 仓库 Settings → Environments 创建 `production`。可将部署分支限制为 main。
 在该环境的 Secrets（或仓库 Actions Secrets）添加：
 
-| Secret | 内容 |
-| --- | --- |
-| `DEPLOY_HOST` | 服务器公网 IPv4 或 SSH 域名，不含协议 |
-| `DEPLOY_USER` | SSH 用户名 |
-| `DEPLOY_PORT` | SSH 端口，空值默认为 22 |
-| `DEPLOY_SSH_KEY` | 专用私钥全文，无交互口令 |
-| `DEPLOY_KNOWN_HOSTS` | 已核对的服务器 known_hosts 行 |
-| `PRODUCTION_ENV` | 完整生产配置，包含 DOMAIN、数据库密码、JWT、SMTP、登录和站点配置等 |
+| Secret               | 内容                                                               |
+| -------------------- | ------------------------------------------------------------------ |
+| `DEPLOY_HOST`        | 服务器公网 IPv4 或 SSH 域名，不含协议                              |
+| `DEPLOY_USER`        | SSH 用户名                                                         |
+| `DEPLOY_PORT`        | SSH 端口，空值默认为 22                                            |
+| `DEPLOY_SSH_KEY`     | 专用私钥全文，无交互口令                                           |
+| `DEPLOY_KNOWN_HOSTS` | 已核对的服务器 known_hosts 行                                      |
+| `PRODUCTION_ENV`     | 完整生产配置，包含 DOMAIN、数据库密码、JWT、SMTP、登录和站点配置等 |
 
 在仓库 Settings → Secrets and variables → Actions → Variables 添加：
 
-| Variable | 内容 |
-| --- | --- |
-| `DEPLOY_DIR` | 服务器绝对部署目录，例如 `/opt/nb-hub`，不含空格 |
-| `DEPLOY_PLATFORM` | `linux/amd64`，必须与服务器和生产配置一致 |
-| `DEPLOY_ENABLED` | 初始设为 `false`，准备完毕后改为 `true` |
+| Variable          | 内容                                             |
+| ----------------- | ------------------------------------------------ |
+| `DEPLOY_DIR`      | 服务器绝对部署目录，例如 `/opt/nb-hub`，不含空格 |
+| `DEPLOY_PLATFORM` | `linux/amd64`，必须与服务器和生产配置一致        |
+| `DEPLOY_ENABLED`  | 初始设为 `false`，准备完毕后改为 `true`          |
 
 `DEPLOY_ENABLED` 必须是仓库级变量，工作流在进入 production 环境前读取它。
 SSH host key 强制校验；不会采用跳过校验的连接方式。

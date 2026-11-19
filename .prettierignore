@@ -1,0 +1,6 @@
+# Dependencies, build outputs, local state and reports also follow .gitignore.
+pnpm-lock.yaml
+**/next-env.d.ts
+packages/ui/src/icons/glyphs.ts
+packages/ui/src/icons/index.ts
+server/pkg/db/generated/

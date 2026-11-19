@@ -4,14 +4,14 @@
 
 ## 测试边界
 
-| 目录 | 环境与职责 |
-| --- | --- |
-| `packages/core` | Node；API 请求、响应契约和纯逻辑 |
-| `packages/ui` | jsdom；基础组件、自绘图标无障碍和生成一致性 |
-| `packages/views` | jsdom；共享首页的加载、失败和手动重试 |
-| `apps/web`、`apps/desktop` | jsdom；预留平台接线测试，当前允许没有用例 |
-| `e2e` | Chromium；真实 API 健康检查、页面展示和手动刷新 |
-| `server` | Go；HTTP、守护进程 WebSocket 和开发库重置保护；数据库集成测试需显式启用 |
+| 目录                       | 环境与职责                                                              |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `packages/core`            | Node；API 请求、响应契约和纯逻辑                                        |
+| `packages/ui`              | jsdom；基础组件、自绘图标无障碍和生成一致性                             |
+| `packages/views`           | jsdom；共享首页的加载、失败和手动重试                                   |
+| `apps/web`、`apps/desktop` | jsdom；预留平台接线测试，当前允许没有用例                               |
+| `e2e`                      | Chromium；真实 API 健康检查、页面展示和手动刷新                         |
+| `server`                   | Go；HTTP、守护进程 WebSocket 和开发库重置保护；数据库集成测试需显式启用 |
 
 移动端独立维护原生测试，不共用 Web/桌面的 jsdom 配置。共享逻辑的输入矩阵只在 core 中测试，组件测试关注接线、无障碍和交互，E2E 关注完整链路。
 
@@ -31,7 +31,7 @@ make test
 
 覆盖率报告写入各共享包的 `coverage/`，包括终端摘要、HTML 和 LCOV；覆盖率统计排除测试文件和自动生成的图标文件。当前不设置无依据的覆盖率门槛。
 
-`make test` 依次运行类型检查、前端单测、开发环境生命周期测试和 `go test ./...`。默认测试不运行真实智能体 CLI，也不访问用户的智能体账户。
+`make test` 依次运行格式检查、类型检查、前端单测、开发环境生命周期测试和 `go test ./...`。CI 使用相同入口。格式检查失败时运行 `make format`；仅检查格式运行 `make format-check`。`pnpm format` / `pnpm format:check` 只处理 Prettier 支持的文件，Go 由 Makefile 中的 gofmt 命令处理。默认测试不运行真实智能体 CLI，也不访问用户的智能体账户。
 
 ## E2E
 
@@ -66,13 +66,13 @@ Playwright 默认不启动服务，使用一个 Chromium 工作进程，不自�
 
 测试默认读取 `.env.development`，可通过 `ENV_FILE` 指定另一份开发配置；不覆盖已有进程变量。
 
-| 变量 | 用途与默认值 |
-| --- | --- |
-| `PLAYWRIGHT_BASE_URL` | 测试页面地址；其次取 `FRONTEND_ORIGIN`，默认 `http://localhost:3000` |
-| `E2E_API_URL` | 测试 API 地址；其次取 `NEXT_PUBLIC_API_URL`，默认 `http://localhost:8080` |
-| `NEXT_PUBLIC_API_URL` | 历史 API 测试地址回退；Web 已使用同源 `/api` |
-| `NB_HUB_DEV_VERIFICATION_CODE` | E2E 登录所用的固定开发验证码，必须与 API 一致 |
-| `NB_HUB_LISTEN_ADDR` | Go 服务监听地址，默认 `127.0.0.1:8080` |
+| 变量                           | 用途与默认值                                                              |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `PLAYWRIGHT_BASE_URL`          | 测试页面地址；其次取 `FRONTEND_ORIGIN`，默认 `http://localhost:3000`      |
+| `E2E_API_URL`                  | 测试 API 地址；其次取 `NEXT_PUBLIC_API_URL`，默认 `http://localhost:8080` |
+| `NEXT_PUBLIC_API_URL`          | 历史 API 测试地址回退；Web 已使用同源 `/api`                              |
+| `NB_HUB_DEV_VERIFICATION_CODE` | E2E 登录所用的固定开发验证码，必须与 API 一致                             |
+| `NB_HUB_LISTEN_ADDR`           | Go 服务监听地址，默认 `127.0.0.1:8080`                                    |
 
 使用自定义端口时，在 `.env.development` 中设置 `NB_HUB_LISTEN_ADDR` 和对应的 `NB_HUB_API_URL`（供 Web 服务端代理），并为测试设置匹配的 `PLAYWRIGHT_BASE_URL` 和 `E2E_API_URL`。Web 客户端使用同源地址。
 

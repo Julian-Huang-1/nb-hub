@@ -10,14 +10,21 @@ vi.mock("electron", () => ({
   safeStorage: {
     isEncryptionAvailable: () => environment.available,
     getSelectedStorageBackend: () => "gnome_libsecret",
-    encryptString: (value: string) => Buffer.from(`encrypted:${Buffer.from(value).toString("base64")}`),
-    decryptString: (value: Buffer) => Buffer.from(value.toString().slice("encrypted:".length), "base64").toString(),
+    encryptString: (value: string) =>
+      Buffer.from(`encrypted:${Buffer.from(value).toString("base64")}`),
+    decryptString: (value: Buffer) =>
+      Buffer.from(value.toString().slice("encrypted:".length), "base64").toString(),
   },
 }));
 import { getAuthToken, setAuthToken } from "./auth-storage";
 
-beforeEach(async () => { environment.directory = await mkdtemp(join(tmpdir(), "nb-hub-auth-storage-")); environment.available = true; });
-afterEach(async () => { await rm(environment.directory, { recursive: true, force: true }); });
+beforeEach(async () => {
+  environment.directory = await mkdtemp(join(tmpdir(), "nb-hub-auth-storage-"));
+  environment.available = true;
+});
+afterEach(async () => {
+  await rm(environment.directory, { recursive: true, force: true });
+});
 it("uses the platform encryption adapter and a private file, then deletes it on logout", async () => {
   expect(await getAuthToken()).toBeNull();
   await setAuthToken("session-secret");

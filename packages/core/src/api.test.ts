@@ -13,22 +13,28 @@ describe("API 客户端", () => {
     expect(fetchMock).toHaveBeenCalledWith("http://localhost:8080/api/health");
   });
 
-  it.each([null, {}, { status: "unknown", service: "nb-hub-api" }, { status: "ok", service: "other" }])(
-    "拒绝不符合契约的响应：%j",
-    async (body) => {
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
-      await expect(createApiClient("http://localhost:8080").getHealth()).rejects.toThrow();
-    },
-  );
+  it.each([
+    null,
+    {},
+    { status: "unknown", service: "nb-hub-api" },
+    { status: "ok", service: "other" },
+  ])("拒绝不符合契约的响应：%j", async (body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+    await expect(createApiClient("http://localhost:8080").getHealth()).rejects.toThrow();
+  });
 
   it("报告非成功 HTTP 状态", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 })));
-    await expect(createApiClient("http://localhost:8080").getHealth()).rejects.toThrow("API returned 503");
+    await expect(createApiClient("http://localhost:8080").getHealth()).rejects.toThrow(
+      "API returned 503",
+    );
   });
 
   it("透传网络错误", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
-    await expect(createApiClient("http://localhost:8080").getHealth()).rejects.toThrow("Failed to fetch");
+    await expect(createApiClient("http://localhost:8080").getHealth()).rejects.toThrow(
+      "Failed to fetch",
+    );
   });
 
   it("拒绝无法解析的 JSON", async () => {

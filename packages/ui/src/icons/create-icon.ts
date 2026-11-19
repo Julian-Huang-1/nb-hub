@@ -30,7 +30,9 @@ function iconClassName(name: string, className?: string) {
 }
 
 function isLabelled(props: Record<string, unknown>) {
-  return Object.keys(props).some((key) => key.startsWith("aria-") || key === "role" || key === "title");
+  return Object.keys(props).some(
+    (key) => key.startsWith("aria-") || key === "role" || key === "title",
+  );
 }
 
 export function createIcon(name: string, node: IconNode): IconComponent {

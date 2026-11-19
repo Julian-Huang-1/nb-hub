@@ -4,15 +4,15 @@
 
 ## 目录结构
 
-| 路径 | 职责 |
-| --- | --- |
-| `apps/web` | 基于 Next.js App Router 的 Web 客户端 |
-| `apps/desktop` | 基于 Electron 和 React Router 的桌面客户端 |
-| `apps/mobile` | 基于 Expo Router 的移动客户端 |
-| `packages/core` | 共享类型、API 客户端和不含界面的查询逻辑 |
-| `packages/ui` | 不依赖业务的 UI 基础组件 |
-| `packages/views` | Web/桌面端共享业务视图 |
-| `server` | Go API、CLI、守护进程和数据库边界 |
+| 路径             | 职责                                       |
+| ---------------- | ------------------------------------------ |
+| `apps/web`       | 基于 Next.js App Router 的 Web 客户端      |
+| `apps/desktop`   | 基于 Electron 和 React Router 的桌面客户端 |
+| `apps/mobile`    | 基于 Expo Router 的移动客户端              |
+| `packages/core`  | 共享类型、API 客户端和不含界面的查询逻辑   |
+| `packages/ui`    | 不依赖业务的 UI 基础组件                   |
+| `packages/views` | Web/桌面端共享业务视图                     |
+| `server`         | Go API、CLI、守护进程和数据库边界          |
 
 依赖方向为 `views -> core + ui`。Web 和桌面端独立管理路由及平台行为；移动端独立维护 React Native 视图，并按仓库边界复用 core 中的类型和纯工具函数。
 
@@ -50,4 +50,6 @@ Web/桌面端使用 Base UI + Nova 主题和自绘图标，说明见 [Nova 主�
 
 ## 测试
 
-运行 `pnpm test` 执行前端单测，运行 `make test` 执行类型检查、前端单测、开发环境生命周期测试和 Go 测试。运行 `make up` 显式启动 API 与 Web 后执行 `pnpm test:e2e`。覆盖率、E2E 环境变量与调试方式见[测试指南](docs/testing.md)。
+运行 `make format` 使用 Prettier 和 gofmt 格式化代码，运行 `make format-check` 只检查格式。Prettier 统一前端代码、JSON、CSS、YAML 和 Markdown，生成文件和锁文件不参与；编辑器基础规则见 `.editorconfig`，支持 Prettier 的编辑器可使用仓库安装的版本及配置。
+
+运行 `pnpm test` 执行前端单测，运行 `make test` 执行格式检查、类型检查、前端单测、开发环境生命周期测试和 Go 测试；CI 使用同一入口。运行 `make up` 显式启动 API 与 Web 后执行 `pnpm test:e2e`。覆盖率、E2E 环境变量与调试方式见[测试指南](docs/testing.md)。

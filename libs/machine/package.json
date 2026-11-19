@@ -1,0 +1,49 @@
+{
+  "name": "@nb-hub/machine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal state machine with Vue scope sharing and selector subscriptions",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./core": {
+      "types": "./src/core/index.ts",
+      "default": "./src/core/index.ts"
+    },
+    "./vue": {
+      "types": "./src/adapter/vue.ts",
+      "default": "./src/adapter/vue.ts"
+    }
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "typesVersions": {
+    "*": {
+      "core": [
+        "src/core/index.ts"
+      ],
+      "vue": [
+        "src/adapter/vue.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "vue": "^3.3.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vue": "3.3.13"
+  }
+}

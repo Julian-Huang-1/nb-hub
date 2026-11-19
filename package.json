@@ -7,6 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "ui:add": "pnpm --filter @nb-hub/ui exec shadcn add",
     "dev:web": "pnpm --filter @nb-hub/web dev",
     "dev:desktop": "pnpm --filter @nb-hub/desktop dev",
@@ -24,6 +26,7 @@
     "@playwright/test": "^1.58.2",
     "@types/node": "catalog:",
     "dotenv": "^17.2.3",
+    "prettier": "3.10.1",
     "typescript": "catalog:"
   }
 }

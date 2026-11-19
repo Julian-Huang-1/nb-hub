@@ -2,7 +2,7 @@
 
 .DEFAULT_GOAL := status
 
-.PHONY: sqlc
+.PHONY: sqlc format format-check
 
 ENV_FILE ?= .env.development
 DEV = ENV_FILE="$(ENV_FILE)" bash scripts/dev.sh
@@ -62,7 +62,19 @@ prod-down:
 prod-logs:
 	$(PROD) logs -f --tail=100
 
-test:
+format:
+	pnpm format
+	gofmt -w server
+
+format-check:
+	pnpm format:check
+	@files="$$(gofmt -l server)" || exit 1; \
+	if [ -n "$$files" ]; then \
+		printf 'Go files need formatting (run make format):\n%s\n' "$$files"; \
+		exit 1; \
+	fi
+
+test: format-check
 	pnpm typecheck
 	pnpm test
 	node --test scripts/dev-env.test.mjs scripts/deploy-production.test.mjs scripts/ensure-cli.test.mjs

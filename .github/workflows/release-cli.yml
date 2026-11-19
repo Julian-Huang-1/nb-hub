@@ -2,7 +2,7 @@ name: Release CLI
 
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ["v*.*.*"]
 
 permissions:
   contents: read
@@ -35,7 +35,7 @@ jobs:
           cache-dependency-path: server/go.sum
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Test CLI and installer
         run: |
           (cd server && go test ./cmd/nb-hub ./internal/sitecli)

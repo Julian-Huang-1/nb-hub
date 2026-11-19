@@ -6,7 +6,9 @@ import { randomUUID } from "node:crypto";
 export class TestApiClient {
   constructor(
     private readonly request: APIRequestContext,
-    readonly baseURL = process.env.E2E_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+    readonly baseURL = process.env.E2E_API_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8080",
   ) {}
 
   getHealth() {
@@ -19,7 +21,10 @@ export class TestApiClient {
 
   async signIn() {
     const code = process.env.NB_HUB_DEV_VERIFICATION_CODE;
-    if (!code) throw new Error("E2E login requires NB_HUB_DEV_VERIFICATION_CODE in an explicitly started development API");
+    if (!code)
+      throw new Error(
+        "E2E login requires NB_HUB_DEV_VERIFICATION_CODE in an explicitly started development API",
+      );
     const email = `e2e-${randomUUID()}@example.com`;
     const sent = await this.request.post(this.authURL("send-code"), { data: { email } });
     if (!sent.ok()) throw new Error(`Send code failed (${sent.status()}): ${await sent.text()}`);
@@ -31,7 +36,9 @@ export class TestApiClient {
   async logout() {
     const state = await this.request.storageState();
     const csrf = state.cookies.find((cookie) => cookie.name === "nbhub_csrf")?.value;
-    return this.request.post(this.authURL("logout"), { headers: csrf ? { "X-CSRF-Token": csrf } : {} });
+    return this.request.post(this.authURL("logout"), {
+      headers: csrf ? { "X-CSRF-Token": csrf } : {},
+    });
   }
 }
 

@@ -39,7 +39,13 @@ export function shape(pts, closed = true) {
   return closed ? `${d} Z` : `${d} L${pt(pts[n - 1])}`;
 }
 
-export const rect = (x, y, w, h, k) => shape([[x, y, k], [x + w, y, k], [x + w, y + h, k], [x, y + h, k]]);
+export const rect = (x, y, w, h, k) =>
+  shape([
+    [x, y, k],
+    [x + w, y, k],
+    [x + w, y + h, k],
+    [x, y + h, k],
+  ]);
 
 /** 绘制正多边形或星形：从 `start` 度开始，围绕中心交替使用 `radii` 中的半径。 */
 export function polygon(cx, cy, radii, count, k, start = -90) {

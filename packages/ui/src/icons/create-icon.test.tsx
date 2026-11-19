@@ -5,7 +5,11 @@ import { Search } from "./index";
 
 describe("自绘图标的无障碍和 DOM 属性", () => {
   it("默认隐藏装饰性图标，避免重复朗读按钮名称", () => {
-    const { container } = render(<button aria-label="搜索"><Search /></button>);
+    const { container } = render(
+      <button aria-label="搜索">
+        <Search />
+      </button>,
+    );
     expect(screen.getByRole("button", { name: "搜索" })).toBeVisible();
     expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });

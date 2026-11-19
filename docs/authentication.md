@@ -83,21 +83,21 @@ curl -H "Authorization: Bearer <个人令牌>" https://你的域名/api/auth/me
 
 所有路径均以 `/api/auth` 开头。Web 默认 Cookie；桌面/移动在验证码请求中携带 `X-Auth-Mode: bearer`，登录响应才返回 JWT。
 
-| 方法与路径 | 行为 |
-| --- | --- |
-| `GET /config` | 可用登录方式 |
-| `POST /send-code` | 发送验证码，JSON `{email}` |
-| `POST /verify-code` | 登录，JSON `{email, code}` |
-| `GET /google/start` | 启动 Google 登录 |
-| `GET /google/callback` | Google 回调 |
-| `GET /me` | 当前用户、凭据类型和会话有效期 |
-| `POST /refresh` | 续期交互式会话 |
-| `POST /logout` | 撤销当前会话、清 Cookie |
-| `GET /sessions` | 当前用户有效会话 |
-| `DELETE /sessions/{id}` | 结束指定的本人会话 |
-| `GET /tokens` | PAT 元数据列表 |
-| `POST /tokens` | 创建 PAT，JSON `{name, expires_in_days}` |
-| `DELETE /tokens/{id}` | 撤销本人 PAT |
+| 方法与路径              | 行为                                     |
+| ----------------------- | ---------------------------------------- |
+| `GET /config`           | 可用登录方式                             |
+| `POST /send-code`       | 发送验证码，JSON `{email}`               |
+| `POST /verify-code`     | 登录，JSON `{email, code}`               |
+| `GET /google/start`     | 启动 Google 登录                         |
+| `GET /google/callback`  | Google 回调                              |
+| `GET /me`               | 当前用户、凭据类型和会话有效期           |
+| `POST /refresh`         | 续期交互式会话                           |
+| `POST /logout`          | 撤销当前会话、清 Cookie                  |
+| `GET /sessions`         | 当前用户有效会话                         |
+| `DELETE /sessions/{id}` | 结束指定的本人会话                       |
+| `GET /tokens`           | PAT 元数据列表                           |
+| `POST /tokens`          | 创建 PAT，JSON `{name, expires_in_days}` |
+| `DELETE /tokens/{id}`   | 撤销本人 PAT                             |
 
 `/api/health` 保持公开，用于部署就绪检查。HTTP 请求通过 router → middleware → handler → service → sqlc → PostgreSQL。后续业务 API 需显式挂载同一个认证中间件，并补上对应业务授权，不能仅凭前端登录页保护数据。
 

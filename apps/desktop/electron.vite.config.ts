@@ -5,5 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   main: { plugins: [externalizeDepsPlugin({})] },
   preload: { plugins: [externalizeDepsPlugin({})] },
-  renderer: { plugins: [react({}), tailwindcss()], resolve: { dedupe: ["react", "react-dom", "@tanstack/react-query"] } },
+  renderer: {
+    plugins: [react({}), tailwindcss()],
+    resolve: { dedupe: ["react", "react-dom", "@tanstack/react-query"] },
+  },
 });

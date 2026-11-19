@@ -46,7 +46,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Enable pinned pnpm
         run: |
           corepack enable
@@ -62,7 +62,8 @@ jobs:
           docker exec "$POSTGRES_CONTAINER" createdb -U postgres nbhub_test_sites
           docker exec "$POSTGRES_CONTAINER" createdb -U postgres nbhub_test_migrations
       - run: pnpm install --frozen-lockfile
-      - run: make test
+      - name: Check formatting, types, and tests
+        run: make test
       - name: Go static checks
         working-directory: server
         run: go vet ./...

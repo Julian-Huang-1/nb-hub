@@ -94,19 +94,19 @@ Cookie 写操作仍要求现有 CSRF 校验。读取或修改其他用户的资�
 响应采用 JSON，错误格式为 `{ "code": "...", "error": "..." }`。
 列表支持 `limit=1..100`、`offset>=0`，返回 `{items, limit, offset}`。
 
-| 方法 | 路径 | 请求或行为 |
-| --- | --- | --- |
-| POST | `/api/v1/sites` | `{name, visibility?, routing_mode?}`，默认 private/static |
-| GET | `/api/v1/sites` | 列出本人站点 |
-| GET | `/api/v1/sites/{site_id}` | 站点和当前 revision |
-| PATCH | `/api/v1/sites/{site_id}` | `{expected_revision, name?, visibility?, routing_mode?}` |
-| DELETE | `/api/v1/sites/{site_id}` | 立即下线，延迟删除文件 |
-| POST | `/api/v1/sites/{site_id}/deployments` | multipart 上传，返回 202 和 Location |
-| GET | `/api/v1/sites/{site_id}/deployments` | 部署历史 |
-| GET | `/api/v1/sites/{site_id}/deployments/{deployment_id}` | 状态及错误码 |
-| PUT | `/api/v1/sites/{site_id}/publication` | `{deployment_id, expected_revision}` |
-| DELETE | `/api/v1/sites/{site_id}/publication` | `{expected_revision}`，下线但保留版本 |
-| POST | `/api/v1/sites/{site_id}/access-tickets` | `{deployment_id?}`，仅交互式会话 |
+| 方法   | 路径                                                  | 请求或行为                                                |
+| ------ | ----------------------------------------------------- | --------------------------------------------------------- |
+| POST   | `/api/v1/sites`                                       | `{name, visibility?, routing_mode?}`，默认 private/static |
+| GET    | `/api/v1/sites`                                       | 列出本人站点                                              |
+| GET    | `/api/v1/sites/{site_id}`                             | 站点和当前 revision                                       |
+| PATCH  | `/api/v1/sites/{site_id}`                             | `{expected_revision, name?, visibility?, routing_mode?}`  |
+| DELETE | `/api/v1/sites/{site_id}`                             | 立即下线，延迟删除文件                                    |
+| POST   | `/api/v1/sites/{site_id}/deployments`                 | multipart 上传，返回 202 和 Location                      |
+| GET    | `/api/v1/sites/{site_id}/deployments`                 | 部署历史                                                  |
+| GET    | `/api/v1/sites/{site_id}/deployments/{deployment_id}` | 状态及错误码                                              |
+| PUT    | `/api/v1/sites/{site_id}/publication`                 | `{deployment_id, expected_revision}`                      |
+| DELETE | `/api/v1/sites/{site_id}/publication`                 | `{expected_revision}`，下线但保留版本                     |
+| POST   | `/api/v1/sites/{site_id}/access-tickets`              | `{deployment_id?}`，仅交互式会话                          |
 
 multipart 字段顺序为可选 `entrypoint`、`message`，最后一个字段必须是 `file`；
 不能有重复或未知字段。支持 `.html`、`.htm` 和 `.zip`。幂等 key 通过

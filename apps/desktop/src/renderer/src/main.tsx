@@ -8,15 +8,31 @@ import "@nb-hub/ui/styles/globals.css";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
-  const [auth] = useState(() => createAuthClient(window.nbHub.apiUrl, {
-    mode: "bearer", storage: window.nbHub.authStorage,
-    subscribeActivity: (listener) => { window.addEventListener("focus", listener); return () => window.removeEventListener("focus", listener); },
-  }));
-  const [router] = useState(() => createMemoryRouter([
-    { path: "/", element: <AccountView client={auth} apiUrl={window.nbHub.apiUrl} /> },
-  ]));
+  const [auth] = useState(() =>
+    createAuthClient(window.nbHub.apiUrl, {
+      mode: "bearer",
+      storage: window.nbHub.authStorage,
+      subscribeActivity: (listener) => {
+        window.addEventListener("focus", listener);
+        return () => window.removeEventListener("focus", listener);
+      },
+    }),
+  );
+  const [router] = useState(() =>
+    createMemoryRouter([
+      { path: "/", element: <AccountView client={auth} apiUrl={window.nbHub.apiUrl} /> },
+    ]),
+  );
 
-  return <QueryClientProvider client={queryClient}><RouterProvider router={router} /></QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  );
 }
 
-createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

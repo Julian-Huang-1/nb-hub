@@ -2,17 +2,17 @@
 
 nb-hub 是一个多客户端工作区。平台专属 API 应保留在对应应用中。
 
-| 路径 | 职责 |
-| --- | --- |
-| `apps/web` | Next.js 路由和浏览器专属代码 |
-| `apps/desktop` | Electron 主进程、预加载脚本、桌面端路由和原生集成 |
-| `apps/mobile` | Expo Router、React Native 界面和移动端独立管理的状态 |
-| `packages/core` | 共享类型、API 客户端和不含界面的业务逻辑 |
-| `packages/ui` | UI 基础组件；不得依赖 `@nb-hub/core` 或包含业务概念 |
-| `packages/views` | Web/桌面端共享业务页面；依赖 core 和 ui |
-| `server/cmd` | API 和 CLI 入口 |
-| `server/internal` | 传输层、领域服务、守护进程和持久化边界 |
-| `server/pkg/agent` | AI CLI 提供方适配器 |
+| 路径               | 职责                                                 |
+| ------------------ | ---------------------------------------------------- |
+| `apps/web`         | Next.js 路由和浏览器专属代码                         |
+| `apps/desktop`     | Electron 主进程、预加载脚本、桌面端路由和原生集成    |
+| `apps/mobile`      | Expo Router、React Native 界面和移动端独立管理的状态 |
+| `packages/core`    | 共享类型、API 客户端和不含界面的业务逻辑             |
+| `packages/ui`      | UI 基础组件；不得依赖 `@nb-hub/core` 或包含业务概念  |
+| `packages/views`   | Web/桌面端共享业务页面；依赖 core 和 ui              |
+| `server/cmd`       | API 和 CLI 入口                                      |
+| `server/internal`  | 传输层、领域服务、守护进程和持久化边界               |
+| `server/pkg/agent` | AI CLI 提供方适配器                                  |
 
 依赖方向为 `views -> core + ui`；core 与 ui 保持独立。移动端可以从 core 导入类型和纯工具函数，但独立维护原生页面和查询状态。Web 和桌面端路由文件应保持精简。
 
@@ -49,5 +49,5 @@ nb-hub 是一个多客户端工作区。平台专属 API 应保留在对应应�
 - 组件测试使用真实 QueryClient，并在 API 客户端边界模拟请求；关闭查询自动重试，测试后清理客户端和 DOM。按需补充浏览器 API 模拟，不要预置与当前功能无关的桩。
 - E2E 使用 Playwright 和 `TestApiClient`，验证真实前后端联通；新增数据准备和清理操作放入该客户端。不要搬入尚不存在的认证、工作区或任务模型。
 - 默认测试不得解析或执行用户安装的智能体 CLI，不得访问真实智能体账户。
-- `pnpm test` 运行 Web/桌面及共享包单测；`pnpm test:coverage` 生成共享包覆盖率；`make test` 运行类型检查、前端单测、开发环境生命周期测试和 Go 测试。原生移动端测试独立配置。
+- `make format` 使用 Prettier 和 gofmt 格式化，`make format-check` 仅检查；生成文件与锁文件不参与 Prettier。`pnpm test` 运行 Web/桌面及共享包单测；`pnpm test:coverage` 生成共享包覆盖率；`make test` 运行格式检查、类型检查、前端单测、开发环境生命周期测试和 Go 测试。原生移动端测试独立配置。
 - E2E 前显式启动 API 和 Web，再运行 `pnpm test:e2e`；测试不自动启动或复用不明服务。环境变量、调试命令和报告路径见 `docs/testing.md`。

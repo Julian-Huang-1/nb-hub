@@ -26,10 +26,21 @@ function createWindow() {
 
 app.whenReady().then(() => {
   const assertSender = (event: Electron.IpcMainInvokeEvent) => {
-    if (!event.senderFrame || event.senderFrame !== event.sender.mainFrame || !BrowserWindow.fromWebContents(event.sender)) throw new Error("Untrusted token storage request");
+    if (
+      !event.senderFrame ||
+      event.senderFrame !== event.sender.mainFrame ||
+      !BrowserWindow.fromWebContents(event.sender)
+    )
+      throw new Error("Untrusted token storage request");
   };
-  ipcMain.handle("auth:get-token", async (event) => { assertSender(event); return getAuthToken(); });
-  ipcMain.handle("auth:set-token", async (event, token: string | null) => { assertSender(event); await setAuthToken(token); });
+  ipcMain.handle("auth:get-token", async (event) => {
+    assertSender(event);
+    return getAuthToken();
+  });
+  ipcMain.handle("auth:set-token", async (event, token: string | null) => {
+    assertSender(event);
+    await setAuthToken(token);
+  });
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

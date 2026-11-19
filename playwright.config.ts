@@ -9,7 +9,8 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+    baseURL:
+      process.env.PLAYWRIGHT_BASE_URL || process.env.FRONTEND_ORIGIN || "http://localhost:3000",
     headless: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",

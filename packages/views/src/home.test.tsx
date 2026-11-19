@@ -15,7 +15,11 @@ const health: Health = { status: "ok", service: "nb-hub-api" };
 function renderHome() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   clients.push(client);
-  return render(<QueryClientProvider client={client}><HomeView apiUrl="http://localhost:8080" /></QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <HomeView apiUrl="http://localhost:8080" />
+    </QueryClientProvider>,
+  );
 }
 
 beforeEach(() => {

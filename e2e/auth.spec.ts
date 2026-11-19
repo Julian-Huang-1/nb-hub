@@ -3,7 +3,8 @@ import { test, expect } from "./fixtures";
 
 test("验证码登录、个人令牌创建撤销、退出及刷新后保持退出", async ({ page }, info) => {
   const code = process.env.NB_HUB_DEV_VERIFICATION_CODE;
-  if (!code) throw new Error("Configure NB_HUB_DEV_VERIFICATION_CODE on the explicit development API");
+  if (!code)
+    throw new Error("Configure NB_HUB_DEV_VERIFICATION_CODE on the explicit development API");
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in to nb-hub" })).toBeVisible();
   await page.screenshot({ path: info.outputPath("login.png"), fullPage: true });

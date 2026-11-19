@@ -19,9 +19,12 @@ function nodes(name, markup) {
     for (const a of m[2].matchAll(/([\w-]+)="([^"]*)"/g)) attrs[a[1]] = a[2];
     const role = ROLES[attrs.class];
     delete attrs.class;
-    if (role) attrs.className = role === "icon-cut" && attrs.fill === "currentColor" ? "icon-cut-fill" : role;
+    if (role)
+      attrs.className =
+        role === "icon-cut" && attrs.fill === "currentColor" ? "icon-cut-fill" : role;
     const clean = {};
-    for (const [k, v] of Object.entries(attrs)) clean[k === "className" ? k : camel(k)] = v.replace(/\s+/g, " ").trim();
+    for (const [k, v] of Object.entries(attrs))
+      clean[k === "className" ? k : camel(k)] = v.replace(/\s+/g, " ").trim();
     list.push([m[1], clean]);
   }
   if (!list.length) throw new Error(`${name}: empty drawing`);
@@ -84,7 +87,10 @@ export function renderPreview(names = Object.keys(DRAWINGS)) {
     `<svg width="${px}" height="${px}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
   const tiles = names.map((n) => {
     if (!DRAWINGS[n]) throw new Error(`no drawing named ${n}`);
-    const tinted = DRAWINGS[n].replace(/class="b"/g, 'class="b" fill="currentColor" fill-opacity=".2"');
+    const tinted = DRAWINGS[n].replace(
+      /class="b"/g,
+      'class="b" fill="currentColor" fill-opacity=".2"',
+    );
     return `<figure>${svg(DRAWINGS[n], 48)}<div>${svg(DRAWINGS[n], 18)}${svg(DRAWINGS[n], 14)}<b>${svg(tinted, 18)}</b></div><figcaption>${n}</figcaption></figure>`;
   });
   return `<!doctype html><meta charset="utf-8"><style>
@@ -115,5 +121,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     else writeFileSync(url, next);
   }
   if (check && stale) process.exit(1);
-  console.log(`${Object.keys(DRAWINGS).length} drawings, ${Object.keys(exportNames()).length} names`);
+  console.log(
+    `${Object.keys(DRAWINGS).length} drawings, ${Object.keys(exportNames()).length} names`,
+  );
 }
